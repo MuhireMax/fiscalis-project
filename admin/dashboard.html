@@ -1,0 +1,207 @@
+bash
+
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>FISCALIS — Tableau de bord</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap"
+      rel="stylesheet"
+    />
+    <script src="shared.js"></script>
+  </head>
+  <body>
+    <script>
+      injectSharedCSS();
+      if (!guardAuth()) throw "";
+    </script>
+    <div id="app"></div>
+    <script>
+      document.getElementById("app").innerHTML = `
+  ${renderNav("dashboard")}
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="page-title">Tableau de bord</div>
+        <div class="page-subtitle">${new Date().toLocaleDateString("fr-FR", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        })}</div>
+      </div>
+      <a href="applications.html" class="btn btn-primary btn-sm">Voir les demandes ${iconArrow()}</a>
+    </div>
+    <div class="content">
+      <div class="stats-grid" id="statsGrid">
+        ${[1, 2, 3, 4]
+          .map(
+            () =>
+              `<div class="stat-card"><div class="spin-center"><div class="spinner"></div></div></div>`
+          )
+          .join("")}
+      </div>
+      <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:18px;margin-bottom:22px">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Répartition par statut</span></div>
+          <div class="card-body" id="statusChart"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Top services</span></div>
+          <div class="card-body" id="topServices"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Demandes récentes</span>
+          <a href="applications.html" class="btn btn-outline btn-sm">Tout voir</a>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>N° Reçu</th><th>Citoyen</th><th>Service</th><th>Montant</th><th>Statut</th><th>Date</th><th></th></tr></thead>
+            <tbody id="recentTbody"><tr><td colspan="7"><div class="spin-center"><div class="spinner"></div></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+      async function load() {
+        const { data } = await apiFetch("/admin/stats");
+        if (!data) return;
+        const a = data.applications,
+          r = data.revenue;
+
+        // Wallet balance from Blink
+        const walletSats = data.walletBalance?.[0]?.balance || 0;
+
+        document.getElementById("statsGrid").innerHTML = `
+    <div class="stat-card c-navy">
+      <div class="s-label">Total demandes</div>
+      <div class="s-value" style="color:var(--navy)">${(
+        a.total || 0
+      ).toLocaleString()}</div>
+      <div class="s-sub">${a.cancelled || 0} annulées</div>
+    </div>
+    <div class="stat-card c-teal">
+      <div class="s-label">Confirmées (Lightning)</div>
+      <div class="s-value" style="color:var(--teal)">${(
+        a.paid || 0
+      ).toLocaleString()}</div>
+      <div class="s-sub">${r.paid_invoices || 0} factures</div>
+    </div>
+    <div class="stat-card c-gold">
+      <div class="s-label">Sats collectés</div>
+      <div class="s-value" style="color:var(--gold)">${bigSats(
+        r.total_sats_collected
+      )}</div>
+      <div class="s-sub">Via Bitcoin Lightning</div>
+    </div>
+    <div class="stat-card c-green">
+      <div class="s-label">Solde du portefeuille</div>
+      <div class="s-value" style="color:var(--green)">${bigSats(
+        walletSats
+      )}</div>
+      <div class="s-sub">Blink — Wallet gouvernemental</div>
+    </div>`;
+
+        // Status bars
+        const statuses = [
+          { label: "En attente", color: "#f59e0b", v: a.pending_payment || 0 },
+          { label: "Payé", color: "#1b8680", v: a.paid || 0 },
+          { label: "Traitement", color: "#3b82f6", v: a.processing || 0 },
+          { label: "Prêt", color: "#8b5cf6", v: a.ready_for_pickup || 0 },
+          { label: "Livré", color: "#16a34a", v: a.delivered || 0 },
+          { label: "Annulé", color: "#dc2626", v: a.cancelled || 0 },
+        ];
+        const maxV = Math.max(...statuses.map((s) => s.v), 1);
+        document.getElementById("statusChart").innerHTML = statuses
+          .map(
+            (s) => `
+    <div style="margin-bottom:13px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px">
+        <span style="color:var(--muted)">${s.label}</span>
+        <span style="font-family:'Syne',sans-serif;font-weight:700">${
+          s.v
+        }</span>
+      </div>
+      <div style="height:6px;background:#f0f0f0;border-radius:4px;overflow:hidden">
+        <div style="height:100%;width:${((s.v / maxV) * 100).toFixed(
+          1
+        )}%;background:${
+              s.color
+            };border-radius:4px;transition:width .7s ease"></div>
+      </div>
+    </div>`
+          )
+          .join("");
+
+        // Top services
+        const svcs = (data.byService || []).slice(0, 5);
+        const maxS = Math.max(...svcs.map((s) => s.count), 1);
+        document.getElementById("topServices").innerHTML = svcs.length
+          ? svcs
+              .map(
+                (s, i) => `
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+        <div style="width:22px;height:22px;border-radius:50%;background:var(--navy);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:10px;font-weight:700;color:#fff;flex-shrink:0">${
+          i + 1
+        }</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${
+            s.name
+          }</div>
+          <div style="height:4px;background:#f0f0f0;border-radius:4px;margin-top:5px">
+            <div style="height:100%;width:${((s.count / maxS) * 100).toFixed(
+              1
+            )}%;background:var(--teal);border-radius:4px"></div>
+          </div>
+        </div>
+        <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;flex-shrink:0;color:var(--navy)">${
+          s.count
+        }</div>
+      </div>`
+              )
+              .join("")
+          : `<p class="text-muted text-sm">Aucune donnée disponible</p>`;
+
+        // Recent applications
+        const { data: apd } = await apiFetch("/admin/applications?limit=8");
+        const apps = apd?.applications || [];
+        document.getElementById("recentTbody").innerHTML = apps.length
+          ? apps
+              .map(
+                (app) => `
+      <tr onclick="window.location='applications.html?uuid=${app.uuid}'">
+        <td><span class="receipt-num">${app.receipt_number}</span></td>
+        <td>
+          <div style="font-weight:500;font-size:13px">${app.citizen_name}</div>
+          <div class="text-xs text-muted">${app.national_id || ""}</div>
+        </td>
+        <td><span class="text-sm">${app.service_name}</span></td>
+        <td><span class="sats-amount">${fmtSats(app.amount_sats)}</span></td>
+        <td>${statusBadge(app.status)}</td>
+        <td><span class="text-sm text-muted">${fmtDate(
+          app.submitted_at
+        )}</span></td>
+        <td><button class="btn btn-ghost btn-xs">${iconEye()}</button></td>
+      </tr>`
+              )
+              .join("")
+          : `<tr><td colspan="7"><div class="empty-state"><p>Aucune demande récente</p></div></td></tr>`;
+      }
+
+      function bigSats(n) {
+        if (!n) return "0";
+        if (n >= 1000000) return (n / 1000000).toFixed(2) + "M";
+        if (n >= 1000) return (n / 1000).toFixed(1) + "K";
+        return String(n);
+      }
+
+      load();
+    </script>
+  </body>
+</html>

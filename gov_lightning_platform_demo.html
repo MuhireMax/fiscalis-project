@@ -1,0 +1,739 @@
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+  :root {
+    --navy: #24456e;
+    --teal: #1b8680;
+    --gold: #c5a059;
+    --navy-light: #2e5a8e;
+    --teal-light: #24b0a8;
+    --gold-light: #d4b070;
+    --dark: #0e1e33;
+    --light: #f4f7fc;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  .demo-root {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--dark);
+    min-height: 600px;
+    padding: 0;
+    color: #fff;
+    overflow: hidden;
+  }
+
+  /* Progress bar */
+  .progress-bar {
+    position: absolute;
+    top: 0; left: 0; height: 3px;
+    background: linear-gradient(90deg, var(--gold), var(--teal-light));
+    transition: width .5s ease;
+    z-index: 10;
+  }
+
+  /* Slide wrapper */
+  .slides-viewport { position: relative; width: 100%; min-height: 580px; }
+  .slide {
+    position: absolute; top: 0; left: 0; width: 100%; min-height: 580px;
+    padding: 40px 48px;
+    opacity: 0; transform: translateX(60px);
+    transition: opacity .45s ease, transform .45s ease;
+    pointer-events: none;
+  }
+  .slide.active {
+    opacity: 1; transform: translateX(0);
+    pointer-events: all;
+  }
+  .slide.exit {
+    opacity: 0; transform: translateX(-60px);
+  }
+
+  /* Navigation */
+  .nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 48px;
+    border-top: 1px solid rgba(255,255,255,.08);
+    position: relative; z-index: 5;
+  }
+  .nav-dots { display: flex; gap: 8px; }
+  .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: rgba(255,255,255,.2);
+    cursor: pointer; transition: all .3s;
+  }
+  .dot.active { background: var(--gold); width: 24px; border-radius: 4px; }
+  .btn {
+    padding: 8px 20px; border-radius: 8px; border: none; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+    transition: all .2s;
+  }
+  .btn-outline {
+    background: transparent; border: 1px solid rgba(255,255,255,.2); color: #fff;
+  }
+  .btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+  .btn-primary {
+    background: var(--gold); color: var(--dark);
+  }
+  .btn-primary:hover { background: var(--gold-light); }
+  .btn:disabled { opacity: .3; cursor: not-allowed; }
+
+  /* Slide 1 – Cover */
+  .cover-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(27,134,128,.15);
+    border: 1px solid rgba(27,134,128,.3);
+    color: var(--teal-light); font-size: 12px; font-weight: 500;
+    padding: 5px 14px; border-radius: 20px; margin-bottom: 24px;
+    letter-spacing: .5px;
+  }
+  .cover-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 42px; font-weight: 800; line-height: 1.1;
+    margin-bottom: 16px;
+  }
+  .cover-title span { color: var(--gold); }
+  .cover-sub {
+    font-size: 16px; color: rgba(255,255,255,.6); max-width: 480px;
+    line-height: 1.6; margin-bottom: 36px;
+  }
+  .cover-tags { display: flex; flex-wrap: wrap; gap: 10px; }
+  .tag {
+    padding: 6px 16px; border-radius: 6px; font-size: 12px; font-weight: 500;
+  }
+  .tag-navy { background: rgba(36,69,110,.5); border: 1px solid rgba(36,69,110,.8); color: #a0b8d8; }
+  .tag-teal { background: rgba(27,134,128,.2); border: 1px solid rgba(27,134,128,.4); color: var(--teal-light); }
+  .tag-gold { background: rgba(197,160,89,.15); border: 1px solid rgba(197,160,89,.3); color: var(--gold-light); }
+  .cover-visual {
+    position: absolute; right: 40px; top: 30px;
+    width: 220px; height: 220px;
+    opacity: .08;
+  }
+
+  /* Slide 2 – Problem */
+  .section-label {
+    font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--gold); font-weight: 500; margin-bottom: 12px;
+  }
+  .slide-title {
+    font-family: 'Syne', sans-serif; font-size: 30px; font-weight: 700;
+    line-height: 1.2; margin-bottom: 28px;
+  }
+  .pain-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .pain-card {
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 12px; padding: 20px;
+    transition: border-color .2s;
+  }
+  .pain-card:hover { border-color: rgba(197,160,89,.3); }
+  .pain-icon { font-size: 24px; margin-bottom: 10px; }
+  .pain-title { font-size: 14px; font-weight: 500; margin-bottom: 6px; }
+  .pain-desc { font-size: 12px; color: rgba(255,255,255,.5); line-height: 1.5; }
+
+  /* Slide 3 – Solution overview */
+  .solution-arch {
+    display: flex; align-items: stretch; gap: 0; margin-top: 8px;
+  }
+  .arch-col {
+    flex: 1; background: rgba(255,255,255,.03);
+    border: 1px solid rgba(255,255,255,.07);
+    border-radius: 12px; padding: 20px; position: relative;
+  }
+  .arch-col + .arch-col { margin-left: 12px; }
+  .arch-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; font-size: 18px; }
+  .arch-title { font-size: 13px; font-weight: 500; margin-bottom: 6px; }
+  .arch-items { list-style: none; }
+  .arch-items li { font-size: 11px; color: rgba(255,255,255,.5); padding: 3px 0; display: flex; gap: 6px; align-items: flex-start; }
+  .arch-items li::before { content:'›'; color: var(--gold); flex-shrink: 0; }
+  .arch-arrow {
+    display: flex; align-items: center; justify-content: center;
+    width: 24px; flex-shrink: 0; color: rgba(255,255,255,.3); font-size: 18px;
+    align-self: center;
+  }
+
+  /* Slide 4 – User flow */
+  .flow-steps { margin-top: 8px; }
+  .flow-step {
+    display: flex; align-items: flex-start; gap: 16px; padding: 14px 0;
+    border-bottom: 1px solid rgba(255,255,255,.05);
+    opacity: 0; transform: translateX(20px);
+    transition: opacity .4s ease, transform .4s ease;
+  }
+  .flow-step.visible { opacity: 1; transform: translateX(0); }
+  .step-num {
+    width: 32px; height: 32px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; flex-shrink: 0;
+    font-family: 'Syne', sans-serif;
+  }
+  .step-body { flex: 1; }
+  .step-name { font-size: 14px; font-weight: 500; margin-bottom: 3px; }
+  .step-detail { font-size: 12px; color: rgba(255,255,255,.45); line-height: 1.4; }
+  .step-badge {
+    font-size: 10px; padding: 2px 8px; border-radius: 4px; align-self: flex-start;
+    font-weight: 500; flex-shrink: 0; margin-top: 3px;
+  }
+
+  /* Slide 5 – Payment animation */
+  .payment-demo {
+    display: flex; gap: 32px; align-items: flex-start; margin-top: 8px;
+  }
+  .phone-mockup {
+    width: 140px; flex-shrink: 0; background: #111;
+    border-radius: 20px; border: 3px solid rgba(255,255,255,.12);
+    padding: 16px 12px; position: relative;
+  }
+  .phone-status { display: flex; justify-content: space-between; font-size: 8px; color: rgba(255,255,255,.4); margin-bottom: 12px; }
+  .phone-doc-title { font-size: 10px; font-weight: 500; margin-bottom: 4px; }
+  .phone-amount {
+    font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800;
+    color: var(--gold); text-align: center; margin: 12px 0;
+  }
+  .qr-box {
+    width: 100px; height: 100px; background: #fff; border-radius: 8px;
+    margin: 0 auto 10px; display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .lightning-badge {
+    background: rgba(197,160,89,.15); border: 1px solid rgba(197,160,89,.3);
+    border-radius: 6px; padding: 4px 8px; font-size: 9px; color: var(--gold);
+    text-align: center; word-break: break-all; line-height: 1.3;
+  }
+  .payment-status-area { flex: 1; }
+  .status-card {
+    border-radius: 12px; padding: 18px;
+    border: 1px solid rgba(255,255,255,.08);
+    margin-bottom: 12px;
+  }
+  .status-label { font-size: 11px; color: rgba(255,255,255,.4); margin-bottom: 6px; }
+  .status-value { font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .pulse-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    animation: pulse-anim 1.4s ease-in-out infinite;
+  }
+  @keyframes pulse-anim {
+    0%,100%{ opacity:1; transform:scale(1); }
+    50%{ opacity:.5; transform:scale(1.4); }
+  }
+  .bolt-anim {
+    font-size: 28px; text-align: center; margin: 8px 0;
+    animation: bolt-fly 1.2s ease-in-out infinite;
+  }
+  @keyframes bolt-fly {
+    0%,100%{ transform:translateY(0) scale(1); opacity:1; }
+    50%{ transform:translateY(-4px) scale(1.15); opacity:.8; }
+  }
+  .receipt-preview {
+    background: rgba(27,134,128,.08); border: 1px solid rgba(27,134,128,.25);
+    border-radius: 10px; padding: 14px; font-size: 11px;
+  }
+  .receipt-row { display: flex; justify-content: space-between; padding: 3px 0; color: rgba(255,255,255,.55); }
+  .receipt-row.highlight { color: #fff; font-weight: 500; }
+
+  /* Slide 6 – Admin dashboard */
+  .admin-dash { margin-top: 8px; }
+  .dash-header {
+    display: flex; justify-content: space-between; align-items: center;
+    background: rgba(36,69,110,.3); border: 1px solid rgba(36,69,110,.5);
+    border-radius: 10px; padding: 12px 16px; margin-bottom: 12px;
+  }
+  .dash-title-area { font-size: 13px; font-weight: 500; }
+  .dash-sub { font-size: 11px; color: rgba(255,255,255,.4); }
+  .stats-row { display: flex; gap: 10px; margin-bottom: 12px; }
+  .stat-box {
+    flex: 1; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07);
+    border-radius: 10px; padding: 12px; text-align: center;
+  }
+  .stat-num { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 700; }
+  .stat-label { font-size: 11px; color: rgba(255,255,255,.4); margin-top: 3px; }
+  .table-wrap { border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,.07); }
+  .table-head {
+    display: grid; grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr;
+    background: rgba(255,255,255,.06); padding: 8px 14px;
+    font-size: 10px; color: rgba(255,255,255,.4); letter-spacing: .5px; text-transform: uppercase;
+  }
+  .table-row {
+    display: grid; grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr;
+    padding: 10px 14px; font-size: 11px;
+    border-top: 1px solid rgba(255,255,255,.04);
+  }
+  .table-row:nth-child(odd) { background: rgba(255,255,255,.02); }
+  .status-pill {
+    display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 500;
+  }
+  .pill-paid { background: rgba(27,134,128,.2); color: var(--teal-light); border: 1px solid rgba(27,134,128,.3); }
+  .pill-pending { background: rgba(197,160,89,.15); color: var(--gold-light); border: 1px solid rgba(197,160,89,.25); }
+  .pill-ready { background: rgba(36,69,110,.3); color: #7aabdf; border: 1px solid rgba(36,69,110,.5); }
+
+  /* Slide 7 – Tech stack */
+  .tech-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
+  .tech-card {
+    border-radius: 12px; padding: 18px;
+    border: 1px solid rgba(255,255,255,.07);
+  }
+  .tech-card-title { font-size: 12px; font-weight: 500; color: rgba(255,255,255,.5); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; }
+  .tech-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,.04); }
+  .tech-item:last-child { border-bottom: none; }
+  .tech-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .tech-name { font-size: 13px; font-weight: 500; }
+  .tech-role { font-size: 11px; color: rgba(255,255,255,.4); margin-left: auto; }
+
+  /* Slide 8 – Closing */
+  .closing-center { text-align: center; padding-top: 30px; }
+  .big-bolt { font-size: 56px; margin-bottom: 16px; animation: bolt-fly 2s ease-in-out infinite; }
+  .closing-title { font-family: 'Syne', sans-serif; font-size: 32px; font-weight: 800; margin-bottom: 12px; }
+  .closing-title span { color: var(--gold); }
+  .closing-sub { font-size: 15px; color: rgba(255,255,255,.55); max-width: 420px; margin: 0 auto 32px; line-height: 1.6; }
+  .feature-pills { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 32px; }
+  .feat-pill {
+    padding: 8px 18px; border-radius: 20px; font-size: 12px; font-weight: 500;
+    background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); color: rgba(255,255,255,.7);
+  }
+  .feat-pill.gold { background: rgba(197,160,89,.12); border-color: rgba(197,160,89,.3); color: var(--gold-light); }
+  .feat-pill.teal { background: rgba(27,134,128,.12); border-color: rgba(27,134,128,.3); color: var(--teal-light); }
+
+  /* QR SVG */
+  .qr-inner { display: grid; grid-template-columns: repeat(7,1fr); gap: 1px; padding: 6px; background: #fff; width: 90px; height: 90px; }
+  .qr-cell { border-radius: 1px; }
+</style>
+
+<div class="demo-root" id="demoRoot">
+  <div class="progress-bar" id="progressBar" style="width:12.5%"></div>
+  <div class="slides-viewport" id="slidesViewport">
+
+    <!-- SLIDE 1: COVER -->
+    <div class="slide active" id="slide-0">
+      <svg class="cover-visual" viewBox="0 0 200 200" fill="none">
+        <circle cx="100" cy="100" r="80" stroke="white" stroke-width="2"/>
+        <circle cx="100" cy="100" r="55" stroke="white" stroke-width="1"/>
+        <path d="M110 50L80 105H105L90 150L120 95H95L110 50Z" fill="white"/>
+      </svg>
+      <div class="cover-badge">
+        <i class="ti ti-bolt" aria-hidden="true"></i>
+        Bitcoin Lightning Network Platform
+      </div>
+      <div class="cover-title">
+        Government Services<br><span>Reimagined with ⚡</span>
+      </div>
+      <div class="cover-sub">
+        A digital platform allowing citizens to request and pay for administrative documents instantly using Bitcoin Lightning Network payments.
+      </div>
+      <div class="cover-tags">
+        <span class="tag tag-teal"><i class="ti ti-device-mobile"></i> Mobile App</span>
+        <span class="tag tag-navy"><i class="ti ti-server"></i> Backend API</span>
+        <span class="tag tag-gold"><i class="ti ti-dashboard"></i> Admin Dashboard</span>
+        <span class="tag tag-teal"><i class="ti ti-currency-bitcoin"></i> Blink API</span>
+      </div>
+    </div>
+
+    <!-- SLIDE 2: PROBLEM -->
+    <div class="slide" id="slide-1">
+      <div class="section-label">The Challenge</div>
+      <div class="slide-title">Administrative Documents<br>are Still Stuck in the Past</div>
+      <div class="pain-grid">
+        <div class="pain-card">
+          <div class="pain-icon">🏦</div>
+          <div class="pain-title">Cash-only payments</div>
+          <div class="pain-desc">Citizens must carry exact cash, queue at counters, no digital trail</div>
+        </div>
+        <div class="pain-card">
+          <div class="pain-icon">📋</div>
+          <div class="pain-title">No transparency</div>
+          <div class="pain-desc">Payment status unknown, easy for fraud and lost receipts</div>
+        </div>
+        <div class="pain-card">
+          <div class="pain-icon">⏳</div>
+          <div class="pain-title">Slow processing</div>
+          <div class="pain-desc">Multiple visits required, manual verification takes days</div>
+        </div>
+        <div class="pain-card">
+          <div class="pain-icon">🌍</div>
+          <div class="pain-title">No financial inclusion</div>
+          <div class="pain-desc">Unbanked citizens excluded from digital services</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 3: SOLUTION OVERVIEW -->
+    <div class="slide" id="slide-2">
+      <div class="section-label">The Solution</div>
+      <div class="slide-title">Three Components,<br>One Seamless Experience</div>
+      <div class="solution-arch">
+        <div class="arch-col">
+          <div class="arch-icon" style="background:rgba(27,134,128,.2)">📱</div>
+          <div class="arch-title" style="color:var(--teal-light)">Mobile App</div>
+          <ul class="arch-items">
+            <li>Browse available services</li>
+            <li>Submit document requests</li>
+            <li>Pay via Lightning QR code</li>
+            <li>Track application status</li>
+            <li>Download digital receipt</li>
+          </ul>
+        </div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-col">
+          <div class="arch-icon" style="background:rgba(36,69,110,.4)">⚙️</div>
+          <div class="arch-title" style="color:#7aabdf">Backend API</div>
+          <ul class="arch-items">
+            <li>Document management</li>
+            <li>Blink API integration</li>
+            <li>Invoice generation</li>
+            <li>Payment verification</li>
+            <li>Receipt generation</li>
+          </ul>
+        </div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-col">
+          <div class="arch-icon" style="background:rgba(197,160,89,.2)">🖥️</div>
+          <div class="arch-title" style="color:var(--gold-light)">Admin Dashboard</div>
+          <ul class="arch-items">
+            <li>View all applications</li>
+            <li>Verify payment status</li>
+            <li>Process requests</li>
+            <li>Mark ready for pickup</li>
+            <li>Confirm document delivery</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 4: USER FLOW -->
+    <div class="slide" id="slide-3">
+      <div class="section-label">Citizen Journey</div>
+      <div class="slide-title">From Request to Receipt<br>in Minutes</div>
+      <div class="flow-steps" id="flowSteps">
+        <div class="flow-step">
+          <div class="step-num" style="background:rgba(27,134,128,.2);color:var(--teal-light)">1</div>
+          <div class="step-body">
+            <div class="step-name">Create account & log in</div>
+            <div class="step-detail">Secure onboarding with national ID verification</div>
+          </div>
+          <div class="step-badge" style="background:rgba(27,134,128,.15);color:var(--teal-light);border:1px solid rgba(27,134,128,.3)">Auth</div>
+        </div>
+        <div class="flow-step">
+          <div class="step-num" style="background:rgba(36,69,110,.4);color:#7aabdf">2</div>
+          <div class="step-body">
+            <div class="step-name">Browse & select document</div>
+            <div class="step-detail">Birth cert, residence cert, academic transcript and more — with fees shown upfront</div>
+          </div>
+          <div class="step-badge" style="background:rgba(36,69,110,.3);color:#7aabdf;border:1px solid rgba(36,69,110,.5)">Browse</div>
+        </div>
+        <div class="flow-step">
+          <div class="step-num" style="background:rgba(197,160,89,.15);color:var(--gold)">3</div>
+          <div class="step-body">
+            <div class="step-name">Lightning invoice generated</div>
+            <div class="step-detail">Backend calls Blink API → QR code displayed instantly. Status: Pending Payment</div>
+          </div>
+          <div class="step-badge" style="background:rgba(197,160,89,.1);color:var(--gold);border:1px solid rgba(197,160,89,.25)">⚡ Blink</div>
+        </div>
+        <div class="flow-step">
+          <div class="step-num" style="background:rgba(27,134,128,.2);color:var(--teal-light)">4</div>
+          <div class="step-body">
+            <div class="step-name">Citizen pays with any Lightning wallet</div>
+            <div class="step-detail">Blink, Zeus, Phoenix, Wallet of Satoshi, Muun — any compatible wallet</div>
+          </div>
+          <div class="step-badge" style="background:rgba(27,134,128,.15);color:var(--teal-light);border:1px solid rgba(27,134,128,.3)">Pay</div>
+        </div>
+        <div class="flow-step">
+          <div class="step-num" style="background:rgba(36,69,110,.4);color:#7aabdf">5</div>
+          <div class="step-body">
+            <div class="step-name">Payment verified → Receipt issued</div>
+            <div class="step-detail">Status updates to "Paid". Digital receipt with QR code generated automatically</div>
+          </div>
+          <div class="step-badge" style="background:rgba(36,69,110,.3);color:#7aabdf;border:1px solid rgba(36,69,110,.5)">Done ✓</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 5: PAYMENT DEMO -->
+    <div class="slide" id="slide-4">
+      <div class="section-label">Payment Flow</div>
+      <div class="slide-title">Lightning-Fast<br>Instant Settlement ⚡</div>
+      <div class="payment-demo">
+        <div class="phone-mockup">
+          <div class="phone-status"><span>09:41</span><span>⚡ 100%</span></div>
+          <div style="text-align:center">
+            <div class="phone-doc-title" style="font-size:9px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.5px">Birth Certificate</div>
+            <div class="phone-amount" id="phoneAmount">5,000 sats</div>
+            <div class="qr-box">
+              <svg width="88" height="88" viewBox="0 0 88 88">
+                <rect width="88" height="88" fill="white"/>
+                <!-- QR code pattern (simplified visual) -->
+                <g fill="#111">
+                  <rect x="8" y="8" width="24" height="24" rx="2"/><rect x="11" y="11" width="18" height="18" rx="1" fill="white"/><rect x="14" y="14" width="12" height="12" rx="1"/>
+                  <rect x="56" y="8" width="24" height="24" rx="2"/><rect x="59" y="11" width="18" height="18" rx="1" fill="white"/><rect x="62" y="14" width="12" height="12" rx="1"/>
+                  <rect x="8" y="56" width="24" height="24" rx="2"/><rect x="11" y="59" width="18" height="18" rx="1" fill="white"/><rect x="14" y="62" width="12" height="12" rx="1"/>
+                  <!-- data cells -->
+                  <rect x="36" y="8" width="6" height="6"/><rect x="44" y="8" width="6" height="6"/>
+                  <rect x="36" y="16" width="6" height="6"/><rect x="44" y="20" width="6" height="6"/>
+                  <rect x="36" y="28" width="6" height="6"/>
+                  <rect x="44" y="36" width="14" height="6"/>
+                  <rect x="36" y="36" width="6" height="6"/>
+                  <rect x="8" y="36" width="6" height="6"/><rect x="16" y="36" width="6" height="6"/><rect x="24" y="36" width="6" height="6"/>
+                  <rect x="56" y="36" width="6" height="6"/><rect x="66" y="36" width="6" height="6"/><rect x="74" y="36" width="6" height="6"/>
+                  <rect x="62" y="44" width="6" height="6"/><rect x="74" y="44" width="6" height="6"/>
+                  <rect x="36" y="56" width="6" height="6"/><rect x="44" y="56" width="6" height="6"/><rect x="52" y="56" width="6" height="6"/>
+                  <rect x="36" y="64" width="6" height="6"/><rect x="52" y="64" width="6" height="6"/>
+                  <rect x="36" y="74" width="6" height="6"/><rect x="44" y="70" width="6" height="6"/><rect x="52" y="74" width="6" height="6"/>
+                  <rect x="62" y="58" width="6" height="6"/><rect x="74" y="58" width="6" height="6"/>
+                  <rect x="68" y="64" width="6" height="6"/>
+                  <rect x="62" y="70" width="14" height="6"/>
+                </g>
+              </svg>
+            </div>
+            <div class="lightning-badge">lnbc50000n1pj...</div>
+          </div>
+        </div>
+        <div class="payment-status-area">
+          <div class="status-card" id="statusCard" style="background:rgba(197,160,89,.06);border-color:rgba(197,160,89,.2)">
+            <div class="status-label">Payment Status</div>
+            <div class="status-value" id="payStatus">
+              <div class="pulse-dot" style="background:var(--gold)"></div>
+              <span id="statusText">Awaiting Payment</span>
+            </div>
+          </div>
+          <div class="bolt-anim" id="boltAnim">⚡</div>
+          <div class="receipt-preview" id="receiptPreview" style="opacity:.3;transition:opacity .5s">
+            <div style="font-size:12px;font-weight:600;color:var(--teal-light);margin-bottom:8px">📄 Digital Receipt</div>
+            <div class="receipt-row highlight"><span>Receipt #</span><span>GVT-2024-00847</span></div>
+            <div class="receipt-row"><span>Citizen</span><span>Jean-Pierre M.</span></div>
+            <div class="receipt-row"><span>Document</span><span>Birth Certificate</span></div>
+            <div class="receipt-row"><span>Amount</span><span>5,000 sats</span></div>
+            <div class="receipt-row"><span>Date</span><span>06 Jun 2026</span></div>
+            <div class="receipt-row highlight"><span>Status</span><span id="receiptStatus" style="color:var(--teal-light)">● Pending</span></div>
+          </div>
+          <button id="payBtn" class="btn btn-primary" style="width:100%;margin-top:10px;font-size:12px" onclick="simulatePayment()">
+            ⚡ Simulate Payment
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 6: ADMIN DASHBOARD -->
+    <div class="slide" id="slide-5">
+      <div class="section-label">Admin Dashboard</div>
+      <div class="slide-title">Real-time Oversight<br>for Officers</div>
+      <div class="admin-dash">
+        <div class="dash-header">
+          <div>
+            <div class="dash-title-area">🖥️ Gov.Admin Portal</div>
+            <div class="dash-sub">Ministry of Interior · Document Services</div>
+          </div>
+          <div style="font-size:11px;color:var(--teal-light)">● Live · Updated now</div>
+        </div>
+        <div class="stats-row">
+          <div class="stat-box">
+            <div class="stat-num" style="color:var(--gold)">247</div>
+            <div class="stat-label">Total Requests</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-num" style="color:var(--teal-light)">189</div>
+            <div class="stat-label">Paid</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-num" style="color:#7aabdf">43</div>
+            <div class="stat-label">Ready for Pickup</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-num" style="color:rgba(255,255,255,.5)">15</div>
+            <div class="stat-label">Pending Payment</div>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <div class="table-head">
+            <span>Citizen</span>
+            <span>Document</span>
+            <span>Amount</span>
+            <span>Date</span>
+            <span>Status</span>
+          </div>
+          <div class="table-row">
+            <span>Jean-Pierre M.</span>
+            <span>Birth Certificate</span>
+            <span>5,000 sats</span>
+            <span>06 Jun</span>
+            <span><span class="status-pill pill-ready">Ready</span></span>
+          </div>
+          <div class="table-row">
+            <span>Amina K.</span>
+            <span>Residence Cert.</span>
+            <span>3,500 sats</span>
+            <span>06 Jun</span>
+            <span><span class="status-pill pill-paid">Paid</span></span>
+          </div>
+          <div class="table-row">
+            <span>Didier N.</span>
+            <span>Academic Cert.</span>
+            <span>8,000 sats</span>
+            <span>05 Jun</span>
+            <span><span class="status-pill pill-pending">Pending</span></span>
+          </div>
+          <div class="table-row">
+            <span>Marie-Claire B.</span>
+            <span>Attestation</span>
+            <span>2,500 sats</span>
+            <span>05 Jun</span>
+            <span><span class="status-pill pill-paid">Paid</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 7: TECH STACK -->
+    <div class="slide" id="slide-6">
+      <div class="section-label">Technology Stack</div>
+      <div class="slide-title">Built on Proven,<br>Open Standards</div>
+      <div class="tech-grid">
+        <div class="tech-card" style="background:rgba(27,134,128,.06);border-color:rgba(27,134,128,.2)">
+          <div class="tech-card-title" style="color:var(--teal-light)">Mobile</div>
+          <div class="tech-item"><div class="tech-dot" style="background:var(--teal-light)"></div><span class="tech-name">React Native</span><span class="tech-role">Cross-platform</span></div>
+          <div class="tech-item"><div class="tech-dot" style="background:var(--teal-light)"></div><span class="tech-name">QR Scanner</span><span class="tech-role">Pickup verification</span></div>
+          <div class="tech-item"><div class="tech-dot" style="background:var(--teal-light)"></div><span class="tech-name">Push Notifications</span><span class="tech-role">Status updates</span></div>
+        </div>
+        <div class="tech-card" style="background:rgba(36,69,110,.2);border-color:rgba(36,69,110,.4)">
+          <div class="tech-card-title" style="color:#7aabdf">Backend</div>
+          <div class="tech-item"><div class="tech-dot" style="background:#7aabdf"></div><span class="tech-name">Node.js / FastAPI</span><span class="tech-role">REST API</span></div>
+          <div class="tech-item"><div class="tech-dot" style="background:#7aabdf"></div><span class="tech-name">PostgreSQL</span><span class="tech-role">Database</span></div>
+          <div class="tech-item"><div class="tech-dot" style="background:#7aabdf"></div><span class="tech-name">Webhooks</span><span class="tech-role">Payment events</span></div>
+        </div>
+        <div class="tech-card" style="background:rgba(197,160,89,.06);border-color:rgba(197,160,89,.2)">
+          <div class="tech-card-title" style="color:var(--gold-light)">Bitcoin Payment</div>
+          <div class="tech-item"><div class="tech-dot" style="background:var(--gold)"></div><span class="tech-name">Blink API</span><span class="tech-role">Invoice creation</span></div>
+          <div class="tech-item"><div class="tech-dot" style="background:var(--gold)"></div><span class="tech-name">Lightning Network</span><span class="tech-role">Instant settlement</span></div>
+          <div class="tech-item"><div class="tech-dot" style="background:var(--gold)"></div><span class="tech-name">BOLT-11 Invoices</span><span class="tech-role">Standard format</span></div>
+        </div>
+        <div class="tech-card" style="background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.08)">
+          <div class="tech-card-title" style="color:rgba(255,255,255,.4)">Admin</div>
+          <div class="tech-item"><div class="tech-dot" style="background:rgba(255,255,255,.4)"></div><span class="tech-name">React Dashboard</span><span class="tech-role">Web portal</span></div>
+          <div class="tech-item"><div class="tech-dot" style="background:rgba(255,255,255,.4)"></div><span class="tech-name">Role-based access</span><span class="tech-role">Security</span></div>
+          <div class="tech-item"><div class="tech-dot" style="background:rgba(255,255,255,.4)"></div><span class="tech-name">Audit log</span><span class="tech-role">Compliance</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 8: CLOSE -->
+    <div class="slide" id="slide-7">
+      <div class="closing-center">
+        <div class="big-bolt">⚡</div>
+        <div class="closing-title">Government Services at the<br><span>Speed of Lightning</span></div>
+        <div class="closing-sub">
+          Modernizing public administration with instant, transparent, and inclusive Bitcoin payments — empowering every citizen regardless of banking status.
+        </div>
+        <div class="feature-pills">
+          <span class="feat-pill gold">⚡ Instant settlement</span>
+          <span class="feat-pill teal">🔒 Immutable records</span>
+          <span class="feat-pill">🌍 Financial inclusion</span>
+          <span class="feat-pill teal">📱 Mobile-first</span>
+          <span class="feat-pill gold">💸 Minimal fees</span>
+          <span class="feat-pill">🧾 Digital receipts</span>
+        </div>
+        <div style="font-size:13px;color:rgba(255,255,255,.35)">Powered by Bitcoin Lightning Network · Blink API</div>
+      </div>
+    </div>
+
+  </div><!-- end viewport -->
+
+  <!-- Navigation -->
+  <div class="nav">
+    <button class="btn btn-outline" id="prevBtn" onclick="navigate(-1)" disabled>← Prev</button>
+    <div class="nav-dots" id="navDots"></div>
+    <button class="btn btn-primary" id="nextBtn" onclick="navigate(1)">Next →</button>
+  </div>
+</div>
+
+<script>
+let current = 0;
+const total = 8;
+const root = document.getElementById('demoRoot');
+
+function buildDots() {
+  const d = document.getElementById('navDots');
+  for (let i = 0; i < total; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'dot' + (i===0?' active':'');
+    dot.onclick = () => goTo(i);
+    d.appendChild(dot);
+  }
+}
+
+function navigate(dir) {
+  goTo(current + dir);
+}
+
+function goTo(n) {
+  if (n < 0 || n >= total) return;
+  const prev = document.getElementById('slide-'+current);
+  prev.classList.remove('active');
+  prev.classList.add('exit');
+  setTimeout(() => prev.classList.remove('exit'), 500);
+
+  current = n;
+  const next = document.getElementById('slide-'+current);
+  next.classList.add('active');
+
+  document.getElementById('progressBar').style.width = ((current+1)/total*100)+'%';
+  document.getElementById('prevBtn').disabled = current === 0;
+  document.getElementById('nextBtn').disabled = current === total-1;
+  document.getElementById('nextBtn').textContent = current === total-1 ? 'Done ✓' : 'Next →';
+
+  const dots = document.querySelectorAll('.dot');
+  dots.forEach((d,i) => d.classList.toggle('active', i===current));
+
+  // Trigger flow step animation on slide 4
+  if (current === 3) animateFlowSteps();
+  // Reset payment demo on slide 5
+  if (current === 4) resetPaymentDemo();
+}
+
+function animateFlowSteps() {
+  const steps = document.querySelectorAll('.flow-step');
+  steps.forEach((s,i) => {
+    s.classList.remove('visible');
+    setTimeout(() => s.classList.add('visible'), 100 + i*150);
+  });
+}
+
+let paymentDone = false;
+function resetPaymentDemo() {
+  paymentDone = false;
+  document.getElementById('statusText').textContent = 'Awaiting Payment';
+  document.getElementById('payStatus').querySelector('.pulse-dot').style.background = 'var(--gold)';
+  document.getElementById('statusCard').style.borderColor = 'rgba(197,160,89,.2)';
+  document.getElementById('statusCard').style.background = 'rgba(197,160,89,.06)';
+  document.getElementById('receiptPreview').style.opacity = '.3';
+  document.getElementById('receiptStatus').textContent = '● Pending';
+  document.getElementById('receiptStatus').style.color = 'var(--gold)';
+  document.getElementById('payBtn').disabled = false;
+  document.getElementById('payBtn').textContent = '⚡ Simulate Payment';
+}
+
+function simulatePayment() {
+  if (paymentDone) return;
+  const btn = document.getElementById('payBtn');
+  btn.disabled = true;
+  btn.textContent = 'Processing...';
+
+  // Step 1: "broadcasting"
+  setTimeout(() => {
+    document.getElementById('statusText').textContent = 'Broadcasting...';
+    document.getElementById('boltAnim').style.animation = 'bolt-fly .4s ease-in-out infinite';
+  }, 300);
+
+  // Step 2: confirmed
+  setTimeout(() => {
+    paymentDone = true;
+    document.getElementById('statusText').textContent = 'Payment Confirmed ✓';
+    document.getElementById('payStatus').querySelector('.pulse-dot').style.background = 'var(--teal-light)';
+    document.getElementById('payStatus').querySelector('.pulse-dot').style.animation = 'none';
+    document.getElementById('statusCard').style.borderColor = 'rgba(27,134,128,.3)';
+    document.getElementById('statusCard').style.background = 'rgba(27,134,128,.08)';
+    document.getElementById('receiptPreview').style.opacity = '1';
+    document.getElementById('receiptStatus').textContent = '● Paid';
+    document.getElementById('receiptStatus').style.color = 'var(--teal-light)';
+    btn.textContent = '✓ Payment Complete';
+    btn.style.background = 'var(--teal)';
+  }, 1800);
+}
+
+buildDots();
+</script>

@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>FISCALIS — Demandes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap"
+      rel="stylesheet"
+    />
+    <script src="shared.js"></script>
+  </head>
+  <body>
+    <script>
+      injectSharedCSS();
+      if (!guardAuth()) throw "";
+    </script>
+
+    <div id="app"></div>
+
+    <!-- ── Detail Modal ─────────────────────────────────────────── -->
+    <div class="modal-overlay" id="detailModal">
+      <div class="modal modal-lg">
+        <div class="modal-header">
+          <div>
+            <div class="modal-title" id="dTitle">Détail de la demande</div>
+            <div
+              style="font-size: 11px; color: var(--muted); margin-top: 2px"
+              id="dReceipt"
+            ></div>
+          </div>
+          <button class="modal-close" onclick="closeModal('detailModal')">
+            &times;
+          </button>
+        </div>
+        <div class="modal-body" id="dBody">
+          <div class="spin-center"><div class="spinner"></div></div>
+        </div>
+        <div class="modal-footer" id="dFooter"></div>
+      </div>
+    </div>
+
+    <!-- ── Status Update Modal ───────────────────────────────────── -->
+    <div class="modal-overlay" id="statusModal">
+      <div class="modal" style="max-width: 420px">
+        <div class="modal-header">
+          <div class="modal-title">Mettre à jour le statut</div>
+          <button class="modal-close" onclick="closeModal('statusModal')">
+            &times;
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Nouveau statut</label>
+            <select class="form-select" id="newStatusSelect"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Notes (optionnel)</label>
+            <textarea
+              class="form-textarea"
+              id="statusNotes"
+              placeholder="Informations complémentaires..."
+            ></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="closeModal('statusModal')">
+            Annuler
+          </button>
+          <button class="btn btn-teal" id="confirmStatusBtn">Confirmer</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      document.getElementById("app").innerHTML = `
+  ${renderNav("applications")}
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="page-title">Demandes</div>
+        <div class="page-subtitle" id="totalCount">Chargement…</div>
+      </div>
+    </div>
+    <div class="content">
+      <!-- Filters -->
+      <div class="card" style="margin-bottom:18px">
+        <div class="card-body" style="padding:14px 18px">
+          <div class="filters">
+            <div class="input-wrap" style="flex:1;min-width:200px">
+              ${iconSearch()}
+              <input class="form-input" id="searchInput" placeholder="Nom, N° reçu, ID national…" style="padding-left:34px">
+            </div>
+            <select class="filter-select" id="statusFilter">
+              <option value="">Tous les statuts</option>
+              <option value="pending_payment">En attente de paiement</option>
+              <option value="paid">Payé</option>
+              <option value="processing">En traitement</option>
+              <option value="ready_for_pickup">Prêt à retirer</option>
+              <option value="delivered">Livré</option>
+              <option value="cancelled">Annulé</option>
+            </select>
+            <select class="filter-select" id="serviceFilter">
+              <option value="">Tous les services</option>
+            </select>
+            <input class="filter-select" type="date" id="dateFrom" title="Date de début">
+            <input class="filter-select" type="date" id="dateTo" title="Date de fin">
+            <button class="btn btn-teal btn-sm" onclick="loadApps(1)">Filtrer</button>
+            <button class="btn btn-outline btn-sm" onclick="resetFilters()">Réinitialiser</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>N° Reçu</th>
+              <th>Citoyen</th>
+              <th>Service</th>
+              <th>Montant</th>
+              <th>Agent</th>
+              <th>Statut</th>
+              <th>Date</th>
+              <th>Actions</th>
+            </tr></thead>
+            <tbody id="appsTbody">
+              <tr><td colspan="8"><div class="spin-center"><div class="spinner"></div></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination" id="pagination"></div>
+      </div>
+    </div>
+  </div>`;
+
+      // Input icon fix
+      document.querySelector(".input-wrap").querySelector("svg").style.cssText =
+        "position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none";
+
+      let currentPage = 1;
+      let currentUUID = null;
+
+      // Load services for filter
+      async function loadServiceFilter() {
+        const { data } = await apiFetch("/services");
+        const sel = document.getElementById("serviceFilter");
+        (data?.services || []).forEach((s) => {
+          sel.innerHTML += `<option value="${s.code}">${s.name}</option>`;
+        });
+      }
+
+      async function loadApps(page = 1) {
+        currentPage = page;
+        const tbody = document.getElementById("appsTbody");
+        tbody.innerHTML = `<tr><td colspan="8"><div class="spin-center"><div class="spinner"></div></div></td></tr>`;
+
+        const params = new URLSearchParams({
+          page,
+          limit: 15,
+          ...(document.getElementById("statusFilter").value && {
+            status: document.getElementById("statusFilter").value,
+          }),
+          ...(document.getElementById("serviceFilter").value && {
+            service_code: document.getElementById("serviceFilter").value,
+          }),
+          ...(document.getElementById("searchInput").value && {
+            search: document.getElementById("searchInput").value,
+          }),
+          ...(document.getElementById("dateFrom").value && {
+            date_from: document.getElementById("dateFrom").value,
+          }),
+          ...(document.getElementById("dateTo").value && {
+            date_to: document.getElementById("dateTo").value,
+          }),
+        });
+
+        const { data } = await apiFetch(`/admin/applications?${params}`);
+        if (!data) return;
+
+        const apps = data.applications || [];
+        const pg = data.pagination || {};
+
+        document.getElementById("totalCount").textContent = `${
+          pg.total || 0
+        } demande(s) trouvée(s)`;
+
+        tbody.innerHTML = apps.length
+          ? apps
+              .map(
+                (a) => `
+      <tr onclick="openDetail('${a.uuid}')">
+        <td><span class="receipt-num">${a.receipt_number}</span></td>
+        <td>
+          <div style="font-weight:500;font-size:13px">${a.citizen_name}</div>
+          <div class="text-xs text-muted">${a.citizen_phone || ""} · ${
+                  a.national_id || ""
+                }</div>
+        </td>
+        <td>
+          <div style="font-size:13px">${a.service_name}</div>
+          <div class="text-xs text-muted">${a.category || ""}</div>
+        </td>
+        <td><span class="sats-amount">${fmtSats(a.amount_sats)}</span></td>
+        <td><span class="text-sm text-muted">${
+          a.officer_name || "—"
+        }</span></td>
+        <td>${statusBadge(a.status)}</td>
+        <td><span class="text-sm text-muted">${fmtDate(
+          a.submitted_at
+        )}</span></td>
+        <td onclick="event.stopPropagation()">
+          <div style="display:flex;gap:4px">
+            <button class="btn btn-ghost btn-xs" onclick="openDetail('${
+              a.uuid
+            }')" title="Voir détail">${iconEye()}</button>
+            ${
+              canUpdateStatus(a.status)
+                ? `<button class="btn btn-ghost btn-xs" onclick="openStatusModal('${
+                    a.uuid
+                  }','${
+                    a.status
+                  }')" title="Changer statut">${iconEdit()}</button>`
+                : ""
+            }
+          </div>
+        </td>
+      </tr>`
+              )
+              .join("")
+          : `<tr><td colspan="8"><div class="empty-state"><p>Aucune demande trouvée</p></div></td></tr>`;
+
+        renderPagination(pg, page);
+      }
+
+      function canUpdateStatus(s) {
+        return [
+          "paid",
+          "processing",
+          "ready_for_pickup",
+          "pending_payment",
+        ].includes(s);
+      }
+
+      function renderPagination(pg, current) {
+        const el = document.getElementById("pagination");
+        if (!pg.pages || pg.pages <= 1) {
+          el.innerHTML = "";
+          return;
+        }
+        let html = `<button class="page-btn" ${
+          current <= 1 ? "disabled" : ""
+        } onclick="loadApps(${current - 1})">‹</button>`;
+        for (let p = 1; p <= pg.pages; p++) {
+          if (p === 1 || p === pg.pages || Math.abs(p - current) <= 1) {
+            html += `<button class="page-btn ${
+              p === current ? "current" : ""
+            }" onclick="loadApps(${p})">${p}</button>`;
+          } else if (Math.abs(p - current) === 2) {
+            html += `<span style="color:var(--muted);padding:0 2px">…</span>`;
+          }
+        }
+        html += `<button class="page-btn" ${
+          current >= pg.pages ? "disabled" : ""
+        } onclick="loadApps(${current + 1})">›</button>`;
+        html += `<span class="page-info">${pg.total} résultats</span>`;
+        el.innerHTML = html;
+      }
+
+      function resetFilters() {
+        [
+          "statusFilter",
+          "serviceFilter",
+          "searchInput",
+          "dateFrom",
+          "dateTo",
+        ].forEach((id) => {
+          document.getElementById(id).value = "";
+        });
+        loadApps(1);
+      }
+
+      // ── Detail modal ──────────────────────────────────────────────
+      async function openDetail(uuid) {
+        currentUUID = uuid;
+        document.getElementById(
+          "dBody"
+        ).innerHTML = `<div class="spin-center"><div class="spinner"></div></div>`;
+        document.getElementById("dFooter").innerHTML = "";
+        openModal("detailModal");
+
+        const { data } = await apiFetch(`/admin/applications/${uuid}`);
+        if (!data) return;
+        const a = data.application;
+
+        document.getElementById("dTitle").textContent = a.service_name;
+        document.getElementById("dReceipt").textContent = a.receipt_number;
+
+        const formData = a.form_data || {};
+        const formEntries = Object.entries(formData);
+
+        document.getElementById("dBody").innerHTML = `
+    <!-- Status + amounts header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding:14px 16px;background:var(--paper);border-radius:8px">
+      <div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.8px">Statut actuel</div>
+        ${statusBadge(a.status)}
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.8px">Montant payé</div>
+        <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:var(--teal)">${fmtSats(
+          a.amount_sats
+        )}</div>
+      </div>
+    </div>
+
+    <!-- Two-col info -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:18px">
+      <div style="padding:14px 16px;border-right:1px solid var(--border);border-bottom:1px solid var(--border)">
+        <div class="detail-label">Citoyen</div>
+        <div class="detail-value">${a.citizen_name}</div>
+      </div>
+      <div style="padding:14px 16px;border-bottom:1px solid var(--border)">
+        <div class="detail-label">Téléphone</div>
+        <div class="detail-value">${a.citizen_phone || "—"}</div>
+      </div>
+      <div style="padding:14px 16px;border-right:1px solid var(--border);border-bottom:1px solid var(--border)">
+        <div class="detail-label">Pièce d'identité</div>
+        <div class="detail-value">${a.national_id || "—"}</div>
+      </div>
+      <div style="padding:14px 16px;border-bottom:1px solid var(--border)">
+        <div class="detail-label">Agent assigné</div>
+        <div class="detail-value">${a.officer_name || "Non assigné"}</div>
+      </div>
+      <div style="padding:14px 16px;border-right:1px solid var(--border);${
+        !formEntries.length ? "" : "border-bottom:1px solid var(--border)"
+      }">
+        <div class="detail-label">Date de soumission</div>
+        <div class="detail-value">${fmtDate(a.submitted_at)}</div>
+      </div>
+      <div style="padding:14px 16px;${
+        !formEntries.length ? "" : "border-bottom:1px solid var(--border)"
+      }">
+        <div class="detail-label">Date de paiement</div>
+        <div class="detail-value">${fmtDate(a.invoice_paid_at)}</div>
+      </div>
+      ${formEntries
+        .map(
+          ([k, v], i) => `
+        <div style="padding:14px 16px;${
+          i % 2 === 0 ? "border-right:1px solid var(--border);" : ""
+        }${
+            i < formEntries.length - 2
+              ? "border-bottom:1px solid var(--border);"
+              : ""
+          }">
+          <div class="detail-label">${k
+            .replace(/_/g, " ")
+            .replace(/\b\w/g, (l) => l.toUpperCase())}</div>
+          <div class="detail-value">${v || "—"}</div>
+        </div>`
+        )
+        .join("")}
+    </div>
+
+    ${
+      a.notes
+        ? `<div style="padding:12px 14px;background:#fffbeb;border:1px solid #fde68a;border-radius:7px;font-size:13px;margin-bottom:18px"><span style="font-weight:600;color:#92400e">Notes agent : </span>${a.notes}</div>`
+        : ""
+    }
+    ${
+      a.citizen_notes
+        ? `<div style="padding:12px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:7px;font-size:13px;margin-bottom:18px"><span style="font-weight:600;color:#166534">Notes citoyen : </span>${a.citizen_notes}</div>`
+        : ""
+    }
+
+    <!-- Timeline -->
+    <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--navy);margin-bottom:12px">Historique</div>
+    <ul class="timeline">
+      ${(a.statusHistory || [])
+        .map(
+          (h) => `
+        <li class="timeline-item">
+          <div class="timeline-dot ${h.new_status === "paid" ? "active" : ""}">
+            ${h.new_status === "paid" ? iconBolt() : iconCheck()}
+          </div>
+          <div class="timeline-content">
+            <div class="timeline-title">${
+              STATUS_META[h.new_status]?.label || h.new_status
+            }</div>
+            <div class="timeline-meta">${fmtDate(h.created_at)} · par ${
+            h.changed_by_type === "officer"
+              ? h.officer_name || "Agent"
+              : "Système"
+          } ${h.notes ? `· <em>${h.notes}</em>` : ""}</div>
+          </div>
+        </li>`
+        )
+        .join("")}
+    </ul>`;
+
+        // Footer buttons
+        const nextMoves = {
+          paid: ["processing", "cancelled"],
+          processing: ["ready_for_pickup", "cancelled"],
+          ready_for_pickup: ["delivered"],
+          pending_payment: ["cancelled"],
+        };
+        const allowed = nextMoves[a.status] || [];
+        document.getElementById("dFooter").innerHTML = `
+    ${
+      ["paid", "processing", "ready_for_pickup", "delivered"].includes(a.status)
+        ? `<a href="${API.replace(
+            "/api",
+            ""
+          )}/api/applications/${uuid}/quittance" target="_blank" class="btn btn-outline btn-sm" style="margin-right:auto">${iconBolt()} Quittance PDF</a>`
+        : ""
+    }
+    ${
+      allowed.length
+        ? `<button class="btn btn-teal btn-sm" onclick="closeModal('detailModal');openStatusModal('${uuid}','${
+            a.status
+          }')">${iconEdit()} Changer statut</button>`
+        : ""
+    }`;
+      }
+
+      // ── Status modal ──────────────────────────────────────────────
+      const STATUS_TRANSITIONS = {
+        pending_payment: [{ v: "cancelled", l: "Annuler" }],
+        paid: [
+          { v: "processing", l: "Mettre en traitement" },
+          { v: "cancelled", l: "Annuler" },
+        ],
+        processing: [
+          { v: "ready_for_pickup", l: "Marquer prêt à retirer" },
+          { v: "cancelled", l: "Annuler" },
+        ],
+        ready_for_pickup: [{ v: "delivered", l: "Confirmer livraison" }],
+      };
+
+      function openStatusModal(uuid, currentStatus) {
+        currentUUID = uuid;
+        const moves = STATUS_TRANSITIONS[currentStatus] || [];
+        if (!moves.length) {
+          showToast("Aucun changement possible", "error");
+          return;
+        }
+        const sel = document.getElementById("newStatusSelect");
+        sel.innerHTML = moves
+          .map((m) => `<option value="${m.v}">${m.l}</option>`)
+          .join("");
+        document.getElementById("statusNotes").value = "";
+        document.getElementById("confirmStatusBtn").onclick = doStatusUpdate;
+        openModal("statusModal");
+      }
+
+      async function doStatusUpdate() {
+        const btn = document.getElementById("confirmStatusBtn");
+        const status = document.getElementById("newStatusSelect").value;
+        const notes = document.getElementById("statusNotes").value.trim();
+        btn.disabled = true;
+        btn.textContent = "En cours…";
+        try {
+          const r = await apiFetch(
+            `/admin/applications/${currentUUID}/status`,
+            {
+              method: "PATCH",
+              body: JSON.stringify({ status, notes: notes || undefined }),
+            }
+          );
+          if (!r.success) throw new Error(r.message);
+          showToast("Statut mis à jour avec succès");
+          closeModal("statusModal");
+          loadApps(currentPage);
+        } catch (e) {
+          showToast(e.message, "error");
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "Confirmer";
+        }
+      }
+
+      // ── Enter to search ───────────────────────────────────────────
+      document
+        .getElementById("searchInput")
+        .addEventListener("keydown", (e) => {
+          if (e.key === "Enter") loadApps(1);
+        });
+
+      // ── Check URL param (coming from dashboard click) ─────────────
+      const urlUUID = new URLSearchParams(window.location.search).get("uuid");
+
+      loadServiceFilter();
+      loadApps(1).then(() => {
+        if (urlUUID) openDetail(urlUUID);
+      });
+    </script>
+  </body>
+</html>

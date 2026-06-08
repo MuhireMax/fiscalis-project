@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>FISCALIS — Vérifier un reçu</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap"
+      rel="stylesheet"
+    />
+    <script src="shared.js"></script>
+    <style>
+      .verify-wrap {
+        max-width: 680px;
+        margin: 0 auto;
+        padding-top: 12px;
+      }
+      .scan-box {
+        border: 2px dashed var(--border);
+        border-radius: 12px;
+        padding: 40px;
+        text-align: center;
+        transition: all 0.2s;
+        cursor: pointer;
+        background: var(--white);
+        margin-bottom: 24px;
+      }
+      .scan-box:hover {
+        border-color: var(--teal);
+        background: #f0fdf9;
+      }
+      .scan-icon {
+        width: 64px;
+        height: 64px;
+        background: linear-gradient(
+          135deg,
+          rgba(27, 134, 128, 0.12),
+          rgba(36, 69, 110, 0.08)
+        );
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 16px;
+      }
+      .scan-title {
+        font-family: "Syne", sans-serif;
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--navy);
+        margin-bottom: 6px;
+      }
+      .scan-sub {
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .result-card {
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1.5px solid var(--border);
+        margin-top: 0;
+      }
+      .result-header {
+        padding: 20px 22px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .result-header.valid {
+        background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+      }
+      .result-header.invalid {
+        background: linear-gradient(135deg, #fee2e2, #fecaca);
+      }
+      .result-header.pending {
+        background: linear-gradient(135deg, #fef3c7, #fde68a);
+      }
+      .valid-mark {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: #16a34a;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .invalid-mark {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: #dc2626;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .pending-mark {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: #d97706;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .result-title {
+        font-family: "Syne", sans-serif;
+        font-size: 17px;
+        font-weight: 700;
+      }
+      .result-sub {
+        font-size: 13px;
+        margin-top: 3px;
+      }
+      .result-body {
+        padding: 22px;
+        background: var(--white);
+      }
+      .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+      .info-item {
+        padding: 12px 14px;
+        background: var(--paper);
+        border-radius: 8px;
+      }
+      .info-lbl {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: var(--muted);
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      .info-val {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--ink);
+      }
+      .action-bar {
+        padding: 16px 22px;
+        background: #fafbfc;
+        border-top: 1px solid var(--border);
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+      }
+      .history-btn {
+        font-size: 12px;
+        color: var(--teal);
+        text-decoration: none;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin-top: 14px;
+        cursor: pointer;
+      }
+      .history-btn:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <script>
+      injectSharedCSS();
+      if (!guardAuth()) throw "";
+    </script>
+    <div id="app"></div>
+
+    <script>
+      document.getElementById("app").innerHTML = `
+  ${renderNav("verify")}
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="page-title">Vérification de reçu</div>
+        <div class="page-subtitle">Vérifiez la validité d'un paiement avant de remettre un document</div>
+      </div>
+    </div>
+    <div class="content">
+      <div class="verify-wrap">
+
+        <!-- Search box -->
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-body">
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label">Numéro de quittance</label>
+              <div style="display:flex;gap:10px">
+                <input class="form-input" id="receiptInput" placeholder="GVP-2024-000001"
+                  style="font-family:'Syne',sans-serif;font-size:15px;font-weight:600;letter-spacing:1px;text-transform:uppercase"
+                  autocomplete="off">
+                <button class="btn btn-teal" id="verifyBtn" onclick="verifyReceipt()">
+                  ${iconScan()} Vérifier
+                </button>
+              </div>
+              <div style="font-size:11px;color:var(--muted);margin-top:8px">
+                Entrez le numéro affiché sur la quittance du citoyen ou scannez le QR code.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Result -->
+        <div id="resultArea"></div>
+
+        <!-- Recent verifications -->
+        <div style="margin-top:28px">
+          <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:12px">Vérifications récentes</div>
+          <div id="historyList" style="display:flex;flex-direction:column;gap:8px"></div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+      // Auto uppercase input
+      document.getElementById("receiptInput").addEventListener("input", (e) => {
+        e.target.value = e.target.value.toUpperCase();
+      });
+      document
+        .getElementById("receiptInput")
+        .addEventListener("keydown", (e) => {
+          if (e.key === "Enter") verifyReceipt();
+        });
+
+      // History stored in session
+      const history = [];
+
+      async function verifyReceipt() {
+        const val = document.getElementById("receiptInput").value.trim();
+        if (!val) {
+          showToast("Veuillez saisir un numéro de quittance", "error");
+          return;
+        }
+
+        const btn = document.getElementById("verifyBtn");
+        btn.disabled = true;
+        btn.innerHTML = `<div class="spinner" style="border-top-color:#fff;width:14px;height:14px"></div> Vérification…`;
+
+        document.getElementById("resultArea").innerHTML = "";
+
+        try {
+          const { data, success, message } = await apiFetch(
+            "/admin/applications/verify-receipt",
+            {
+              method: "POST",
+              body: JSON.stringify({ receipt_number: val }),
+            }
+          );
+
+          if (!success) {
+            renderResult(null, message);
+            return;
+          }
+
+          renderResult(data);
+
+          // Save to history
+          history.unshift({ receipt: val, data, time: new Date() });
+          renderHistory();
+        } catch (e) {
+          renderResult(null, e.message);
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = `${iconScan()} Vérifier`;
+        }
+      }
+
+      function renderResult(data, errMsg) {
+        const el = document.getElementById("resultArea");
+
+        if (!data) {
+          el.innerHTML = `
+      <div class="result-card">
+        <div class="result-header invalid" style="gap:16px">
+          <div class="invalid-mark">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </div>
+          <div>
+            <div class="result-title" style="color:#991b1b">Reçu introuvable</div>
+            <div class="result-sub" style="color:#b91c1c">${
+              errMsg || "Ce numéro de reçu n'existe pas dans le système."
+            }</div>
+          </div>
+        </div>
+      </div>`;
+          return;
+        }
+
+        const a = data.application;
+        const isValid = data.valid;
+        const isReady = data.readyForPickup;
+
+        let headerCls, markEl, titleText, subText;
+
+        if (!isValid) {
+          headerCls = "invalid";
+          markEl = `<div class="invalid-mark"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>`;
+          titleText = "Paiement NON confirmé";
+          subText = "Ce reçu n'est pas associé à un paiement validé.";
+        } else if (!isReady) {
+          headerCls = "pending";
+          markEl = `<div class="pending-mark"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg></div>`;
+          titleText = "Paiement confirmé — Document en cours";
+          subText = `Statut actuel : ${
+            STATUS_META[a.status]?.label || a.status
+          }. Document pas encore prêt.`;
+        } else {
+          headerCls = "valid";
+          markEl = `<div class="valid-mark"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20,6 9,17 4,12"/></svg></div>`;
+          titleText = "Paiement confirmé ✓ — Prêt à remettre";
+          subText =
+            "Le paiement est validé et le document est prêt. Vous pouvez le remettre.";
+        }
+
+        el.innerHTML = `
+    <div class="result-card">
+      <div class="result-header ${headerCls}" style="gap:16px">
+        ${markEl}
+        <div style="flex:1">
+          <div class="result-title" style="color:${
+            isValid ? (isReady ? "#166534" : "#92400e") : "#991b1b"
+          }">${titleText}</div>
+          <div class="result-sub" style="color:${
+            isValid ? (isReady ? "#15803d" : "#a16207") : "#b91c1c"
+          }">${subText}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;color:var(--muted);margin-bottom:2px">N° REÇU</div>
+          <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:var(--navy)">${
+            a.receiptNumber
+          }</div>
+        </div>
+      </div>
+
+      <div class="result-body">
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-lbl">Nom du citoyen</div>
+            <div class="info-val">${a.citizen.name}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-lbl">Pièce d'identité</div>
+            <div class="info-val">${a.citizen.nationalId || "—"}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-lbl">Service demandé</div>
+            <div class="info-val">${a.service}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-lbl">Montant payé</div>
+            <div class="info-val" style="font-family:'Syne',sans-serif;color:var(--teal);font-size:16px">${fmtSats(
+              a.amountSats
+            )}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-lbl">Statut de la demande</div>
+            <div class="info-val">${statusBadge(a.status)}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-lbl">Date de paiement</div>
+            <div class="info-val">${fmtDate(a.paidAt)}</div>
+          </div>
+        </div>
+      </div>
+
+      ${
+        isReady
+          ? `
+      <div class="action-bar">
+        <span style="font-size:12px;color:var(--muted);margin-right:auto;align-self:center">Après remise, marquez comme livré dans les demandes.</span>
+        <a href="applications.html" class="btn btn-outline btn-sm">Voir la demande</a>
+        <button class="btn btn-teal btn-sm" onclick="markDelivered('${
+          data.application.receiptNumber
+        }')">
+          ${iconCheck()} Marquer comme livré
+        </button>
+      </div>`
+          : ""
+      }
+    </div>`;
+      }
+
+      async function markDelivered(receiptNumber) {
+        // Find the UUID by searching applications
+        try {
+          const { data } = await apiFetch(
+            `/admin/applications?search=${encodeURIComponent(
+              receiptNumber
+            )}&limit=1`
+          );
+          const app = data?.applications?.[0];
+          if (!app) {
+            showToast("Demande introuvable", "error");
+            return;
+          }
+
+          const r = await apiFetch(`/admin/applications/${app.uuid}/status`, {
+            method: "PATCH",
+            body: JSON.stringify({
+              status: "delivered",
+              notes: "Document remis au guichet",
+            }),
+          });
+          if (!r.success) throw new Error(r.message);
+          showToast("Document marqué comme livré !");
+          document.getElementById("receiptInput").value = "";
+          document.getElementById("resultArea").innerHTML = "";
+        } catch (e) {
+          showToast(e.message, "error");
+        }
+      }
+
+      function renderHistory() {
+        const el = document.getElementById("historyList");
+        el.innerHTML = history
+          .slice(0, 5)
+          .map(
+            (h) => `
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--white);border:1px solid var(--border);border-radius:8px;cursor:pointer"
+         onclick="document.getElementById('receiptInput').value='${
+           h.receipt
+         }';verifyReceipt()">
+      <div style="width:8px;height:8px;border-radius:50%;background:${
+        h.data?.valid
+          ? h.data.readyForPickup
+            ? "var(--green)"
+            : "var(--gold)"
+          : "var(--red)"
+      }"></div>
+      <span class="receipt-num">${h.receipt}</span>
+      <span style="font-size:12px;color:var(--muted)">${
+        h.data?.application?.service || "—"
+      }</span>
+      <span style="font-size:11px;color:var(--muted);margin-left:auto">${h.time.toLocaleTimeString(
+        "fr-FR",
+        { hour: "2-digit", minute: "2-digit" }
+      )}</span>
+    </div>`
+          )
+          .join("");
+      }
+    </script>
+  </body>
+</html>

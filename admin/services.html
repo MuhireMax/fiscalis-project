@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>FISCALIS — Services</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap"
+      rel="stylesheet"
+    />
+    <script src="shared.js"></script>
+    <style>
+      .svc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px}
+      .svc-card{background:var(--white);border:1.5px solid var(--border);border-radius:10px;overflow:hidden;transition:box-shadow .2s,border-color .2s}
+      .svc-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.07);border-color:var(--teal)}
+      .svc-card-top{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:12px}
+      .svc-icon{width:40px;height:40px;border-radius:9px;background:linear-gradient(135deg,rgba(27,134,128,.12),rgba(36,69,110,.07));display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px}
+      .svc-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--navy);line-height:1.3}
+      .svc-code{font-size:11px;color:var(--muted);font-family:'DM Sans',monospace;margin-top:2px}
+      .svc-body{padding:14px 18px}
+      .svc-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+      .svc-price{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:var(--teal)}
+      .svc-days{font-size:12px;color:var(--muted)}
+      .svc-fields{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px;min-height:24px}
+      .svc-footer{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;border-top:1px solid var(--border);background:#fafbfc}
+      .svc-inactive{opacity:.55}
+      /* Field builder */
+      .field-row{display:grid;grid-template-columns:1fr 1fr auto auto;gap:8px;align-items:center;padding:8px 10px;border:1px solid var(--border);border-radius:7px;margin-bottom:8px;background:var(--paper)}
+      .field-row input,.field-row select{padding:6px 10px;border:1.5px solid var(--border);border-radius:5px;font-size:12px;font-family:'DM Sans',sans-serif;outline:none;background:#fff;transition:border-color .2s}
+      .field-row input:focus,.field-row select:focus{border-color:var(--teal)}
+      .req-toggle{width:32px;height:18px;border-radius:20px;border:none;cursor:pointer;transition:background .2s;flex-shrink:0;position:relative}
+      .req-toggle::after{content:'';width:14px;height:14px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left .2s}
+      .req-toggle.on{background:var(--teal)}
+      .req-toggle.on::after{left:16px}
+      .req-toggle.off{background:var(--border)}
+      .btn-remove-field{background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;border-radius:4px;display:flex;align-items:center;transition:all .15s;flex-shrink:0}
+      .btn-remove-field:hover{background:#fee2e2;color:var(--red)}
+      .category-icons={'Identité':'🪪','État Civil':'📋','Judiciaire':'⚖️','Transport':'🚗','Commerce':'💼','Éducation':'🎓','default':'📄'};
+    </style>
+  </head>
+  <body>
+    <script>
+      injectSharedCSS();
+      if (!guardAuth()) throw "";
+    </script>
+    <div id="app"></div>
+
+    <!-- ── Create / Edit Modal ── -->
+    <div class="modal-overlay" id="svcModal">
+      <div class="modal modal-lg">
+        <div class="modal-header">
+          <div class="modal-title" id="svcModalTitle">Nouveau service</div>
+          <button class="modal-close" onclick="closeModal('svcModal')">
+            &times;
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label">Nom du service *</label>
+              <input
+                class="form-input"
+                id="fName"
+                placeholder="Ex: Extrait d'acte de naissance"
+              />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Code unique *</label>
+              <input
+                class="form-input"
+                id="fCode"
+                placeholder="Ex: BIRTH_CERT"
+                style="font-family: monospace; text-transform: uppercase"
+              />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Catégorie *</label>
+              <select class="form-select" id="fCategory">
+                <option value="">Sélectionner…</option>
+                <option>Identité</option>
+                <option>État Civil</option>
+                <option>Judiciaire</option>
+                <option>Transport</option>
+                <option>Commerce</option>
+                <option>Éducation</option>
+                <option>Autre</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Frais (satoshis) *</label>
+              <input
+                class="form-input"
+                id="fFee"
+                type="number"
+                min="1"
+                placeholder="Ex: 12000"
+              />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Délai de traitement (jours)</label>
+              <input
+                class="form-input"
+                id="fDays"
+                type="number"
+                min="1"
+                value="5"
+              />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Statut</label>
+              <select class="form-select" id="fActive">
+                <option value="1">Actif</option>
+                <option value="0">Inactif</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Description</label>
+            <textarea
+              class="form-textarea"
+              id="fDesc"
+              placeholder="Description du service…"
+              style="min-height: 60px"
+            ></textarea>
+          </div>
+
+          <!-- Dynamic fields builder -->
+          <div
+            style="
+              border-top: 1px solid var(--border);
+              padding-top: 16px;
+              margin-top: 4px;
+            "
+          >
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 12px;
+              "
+            >
+              <div>
+                <div
+                  style="
+                    font-family: 'Syne', sans-serif;
+                    font-size: 12px;
+                    font-weight: 700;
+                    text-transform: uppercase;
+                    letter-spacing: 0.8px;
+                    color: var(--navy);
+                  "
+                >
+                  Champs du formulaire
+                </div>
+                <div
+                  style="font-size: 11px; color: var(--muted); margin-top: 2px"
+                >
+                  Informations à saisir par le citoyen lors de la demande
+                </div>
+              </div>
+              <button class="btn btn-outline btn-sm" onclick="addField()">
+                ${iconPlus()} Ajouter un champ
+              </button>
+            </div>
+            <div
+              style="
+                display: grid;
+                grid-template-columns: 1fr 1fr auto auto;
+                gap: 8px;
+                padding: 0 10px 8px;
+                font-size: 10px;
+                text-transform: uppercase;
+                letter-spacing: 0.8px;
+                color: var(--muted);
+                font-weight: 600;
+              "
+            >
+              <span>Clé (key)</span><span>Label affiché</span><span>Type</span
+              ><span style="text-align: center">Requis</span>
+            </div>
+            <div id="fieldsBuilder"></div>
+            <div
+              id="noFields"
+              style="
+                text-align: center;
+                padding: 20px;
+                color: var(--muted);
+                font-size: 13px;
+                border: 1.5px dashed var(--border);
+                border-radius: 8px;
+              "
+            >
+              Aucun champ — cliquez "Ajouter un champ" pour commencer
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="closeModal('svcModal')">
+            Annuler
+          </button>
+          <button class="btn btn-teal" id="saveSvcBtn" onclick="saveService()">
+            Enregistrer
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const catIcons = {
+        Identité: "🪪",
+        "État Civil": "📋",
+        Judiciaire: "⚖️",
+        Transport: "🚗",
+        Commerce: "💼",
+        Éducation: "🎓",
+      };
+
+      document.getElementById("app").innerHTML = `
+  ${renderNav("services")}
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="page-title">Catalogue des services</div>
+        <div class="page-subtitle">Gérez les documents disponibles et leurs tarifs</div>
+      </div>
+      <button class="btn btn-teal" onclick="openCreate()">${iconPlus()} Nouveau service</button>
+    </div>
+    <div class="content">
+      <div class="svc-grid" id="svcGrid">
+        ${[1, 2, 3, 4, 5, 6]
+          .map(
+            () =>
+              `<div class="svc-card"><div style="padding:40px"><div class="spin-center"><div class="spinner"></div></div></div></div>`
+          )
+          .join("")}
+      </div>
+    </div>
+  </div>`;
+
+      let editingCode = null;
+      let fields = [];
+
+      async function loadServices() {
+        const { data } = await apiFetch("/services");
+        const svcs = data?.services || [];
+        document.getElementById("svcGrid").innerHTML = svcs.length
+          ? svcs
+              .map((s) => {
+                const icon = catIcons[s.category] || "📄";
+                const ff = s.form_fields || [];
+                return `
+        <div class="svc-card ${s.is_active ? "" : "svc-inactive"}">
+          <div class="svc-card-top">
+            <div class="svc-icon">${icon}</div>
+            <div style="flex:1;min-width:0">
+              <div class="svc-name">${s.name}</div>
+              <div class="svc-code">${s.code}</div>
+            </div>
+            ${
+              s.is_active
+                ? `<span class="badge badge-paid" style="flex-shrink:0">Actif</span>`
+                : `<span class="badge badge-cancel" style="flex-shrink:0">Inactif</span>`
+            }
+          </div>
+          <div class="svc-body">
+            <div class="svc-meta">
+              <div class="svc-price">${Number(s.fee_sats).toLocaleString(
+                "fr-FR"
+              )} sats</div>
+              <div class="svc-days">⏱ ${s.processing_days} jours</div>
+            </div>
+            <div class="svc-fields">
+              ${
+                ff.length
+                  ? ff
+                      .map(
+                        (f) =>
+                          `<span class="tag" title="${
+                            f.required ? "Requis" : "Optionnel"
+                          }">${f.label}${f.required ? " *" : ""}</span>`
+                      )
+                      .join("")
+                  : `<span style="font-size:11px;color:var(--muted)">Aucun champ spécifique</span>`
+              }
+            </div>
+            ${
+              s.description
+                ? `<p style="font-size:12px;color:var(--muted);line-height:1.5">${s.description}</p>`
+                : ""
+            }
+          </div>
+          <div class="svc-footer">
+            <span style="font-size:11px;color:var(--muted)">${
+              s.category || ""
+            }</span>
+            <button class="btn btn-outline btn-xs" onclick="openEdit('${
+              s.code
+            }')">${iconEdit()} Modifier</button>
+          </div>
+        </div>`;
+              })
+              .join("")
+          : `<div class="empty-state" style="grid-column:1/-1"><p>Aucun service configuré</p></div>`;
+      }
+
+      // ── Field builder ──────────────────────────────────────────────
+      function addField(f = {}) {
+        const id = "f_" + Date.now();
+        const isReq = f.required !== false;
+        const row = document.createElement("div");
+        row.className = "field-row";
+        row.id = id;
+        row.innerHTML = `
+    <input type="text" placeholder="ex: nom_complet" value="${f.key || ""}"
+      oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9_]/g,'_')"
+      class="f-key">
+    <input type="text" placeholder="ex: Nom complet" value="${
+      f.label || ""
+    }" class="f-label">
+    <select class="f-type">
+      <option value="text"   ${
+        (f.type || "text") === "text" ? "selected" : ""
+      }>Texte</option>
+      <option value="number" ${
+        f.type === "number" ? "selected" : ""
+      }>Nombre</option>
+      <option value="date"   ${
+        f.type === "date" ? "selected" : ""
+      }>Date</option>
+      <option value="email"  ${
+        f.type === "email" ? "selected" : ""
+      }>Email</option>
+    </select>
+    <button class="req-toggle ${isReq ? "on" : "off"}" title="${
+          isReq ? "Requis" : "Optionnel"
+        }"
+      onclick="this.classList.toggle('on');this.classList.toggle('off');this.title=this.classList.contains('on')?'Requis':'Optionnel'">
+    </button>
+    <button class="btn-remove-field" onclick="document.getElementById('${id}').remove();syncNoFields()">
+      ${iconX()}
+    </button>`;
+        document.getElementById("fieldsBuilder").appendChild(row);
+        syncNoFields();
+      }
+
+      function syncNoFields() {
+        const isEmpty =
+          document.getElementById("fieldsBuilder").children.length === 0;
+        document.getElementById("noFields").style.display = isEmpty
+          ? "block"
+          : "none";
+      }
+
+      function getFields() {
+        return [...document.getElementById("fieldsBuilder").children]
+          .map((row) => ({
+            key: row.querySelector(".f-key").value.trim(),
+            label: row.querySelector(".f-label").value.trim(),
+            type: row.querySelector(".f-type").value,
+            required: row.querySelector(".req-toggle").classList.contains("on"),
+          }))
+          .filter((f) => f.key && f.label);
+      }
+
+      // ── Open create / edit ─────────────────────────────────────────
+      function openCreate() {
+        editingCode = null;
+        document.getElementById("svcModalTitle").textContent =
+          "Nouveau service";
+        ["fName", "fCode", "fDesc", "fFee", "fCategory"].forEach(
+          (id) => (document.getElementById(id).value = "")
+        );
+        document.getElementById("fDays").value = "5";
+        document.getElementById("fActive").value = "1";
+        document.getElementById("fCode").readOnly = false;
+        document.getElementById("fieldsBuilder").innerHTML = "";
+        syncNoFields();
+        openModal("svcModal");
+      }
+
+      async function openEdit(code) {
+        editingCode = code;
+        document.getElementById("svcModalTitle").textContent =
+          "Modifier le service";
+        document.getElementById("saveSvcBtn").textContent =
+          "Enregistrer les modifications";
+
+        // Fetch service
+        const { data } = await apiFetch(`/services/${code}`);
+        const s = data?.service;
+        if (!s) {
+          showToast("Service introuvable", "error");
+          return;
+        }
+
+        document.getElementById("fName").value = s.name || "";
+        document.getElementById("fCode").value = s.code || "";
+        document.getElementById("fCode").readOnly = true;
+        document.getElementById("fDesc").value = s.description || "";
+        document.getElementById("fCategory").value = s.category || "";
+        document.getElementById("fFee").value = s.fee_sats || "";
+        document.getElementById("fDays").value = s.processing_days || 5;
+        document.getElementById("fActive").value = s.is_active ? "1" : "0";
+
+        document.getElementById("fieldsBuilder").innerHTML = "";
+        (s.form_fields || []).forEach((f) => addField(f));
+        syncNoFields();
+        openModal("svcModal");
+      }
+
+      // ── Save ───────────────────────────────────────────────────────
+      async function saveService() {
+        const btn = document.getElementById("saveSvcBtn");
+        const body = {
+          name: document.getElementById("fName").value.trim(),
+          code: document.getElementById("fCode").value.trim().toUpperCase(),
+          description: document.getElementById("fDesc").value.trim(),
+          category: document.getElementById("fCategory").value,
+          fee_sats: parseInt(document.getElementById("fFee").value),
+          processing_days: parseInt(document.getElementById("fDays").value),
+          is_active: document.getElementById("fActive").value === "1",
+          form_fields: getFields(),
+        };
+
+        if (!body.name || !body.code || !body.category || !body.fee_sats) {
+          showToast(
+            "Veuillez remplir tous les champs obligatoires (*)",
+            "error"
+          );
+          return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = "Enregistrement…";
+        try {
+          let r;
+          if (editingCode) {
+            r = await apiFetch(`/admin/services/${editingCode}`, {
+              method: "PUT",
+              body: JSON.stringify(body),
+            });
+          } else {
+            r = await apiFetch("/admin/services", {
+              method: "POST",
+              body: JSON.stringify(body),
+            });
+          }
+          if (!r.success) throw new Error(r.message);
+          showToast(
+            editingCode ? "Service mis à jour" : "Service créé avec succès"
+          );
+          closeModal("svcModal");
+          loadServices();
+        } catch (e) {
+          showToast(e.message, "error");
+        } finally {
+          btn.disabled = false;
+          btn.textContent = editingCode
+            ? "Enregistrer les modifications"
+            : "Enregistrer";
+        }
+      }
+
+      // Auto uppercase code input
+      document.getElementById("fCode").addEventListener("input", (e) => {
+        e.target.value = e.target.value
+          .toUpperCase()
+          .replace(/[^A-Z0-9_]/g, "_");
+      });
+
+      loadServices();
+    </script>
+  </body>
+</html>

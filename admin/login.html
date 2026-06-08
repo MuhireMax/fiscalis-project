@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FISCALIS — Connexion</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --ink: #0d0f14;
+        --paper: #f5f3ee;
+        --gold: #1b8680;
+        --gold1: #24456e;
+        --gold2: #1b8680;
+        --muted: #8a8478;
+        --border: rgba(0, 0, 0, 0.1);
+        --red: #c0392b;
+      }
+
+      html,
+      body {
+        height: 100%;
+        font-family: "DM Sans", sans-serif;
+        background: var(--paper);
+        color: var(--ink);
+        overflow: hidden;
+      }
+
+      /* ── grid bg ── */
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image: linear-gradient(var(--border) 1px, transparent 1px),
+          linear-gradient(90deg, var(--border) 1px, transparent 1px);
+        background-size: 48px 48px;
+        pointer-events: none;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        height: 100vh;
+      }
+
+      /* ── left panel ── */
+      .left {
+        background: var(--ink);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 52px 56px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .left::before {
+        content: "FISCALIS";
+        position: absolute;
+        bottom: -40px;
+        left: -20px;
+        font-family: "Syne", sans-serif;
+        font-size: 160px;
+        font-weight: 800;
+        color: rgba(255, 255, 255, 0.03);
+        white-space: nowrap;
+        pointer-events: none;
+        letter-spacing: -4px;
+      }
+
+      .brand {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .brand-mark {
+        width: 42px;
+        height: 42px;
+        border: 2px solid var(--gold);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: "Syne", sans-serif;
+        font-weight: 800;
+        font-size: 18px;
+        color: var(--gold);
+        letter-spacing: 1px;
+      }
+
+      .brand-mark img {
+        width: 42px;
+        height: 42px;
+      }
+
+      .brand-name {
+        font-family: "Syne", sans-serif;
+        font-size: 13px;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.4);
+        letter-spacing: 4px;
+        text-transform: uppercase;
+        margin-top: 8px;
+      }
+
+      .left-main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      .left-headline {
+        font-family: "Syne", sans-serif;
+        font-size: 52px;
+        font-weight: 800;
+        color: #fff;
+        line-height: 1.05;
+        letter-spacing: -1.5px;
+        margin-bottom: 24px;
+      }
+
+      .left-headline em {
+        font-style: normal;
+        color: var(--gold);
+      }
+
+      .left-desc {
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.45);
+        line-height: 1.7;
+        max-width: 340px;
+      }
+
+      .left-stats {
+        display: flex;
+        gap: 40px;
+      }
+
+      .stat-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .stat-num {
+        font-family: "Syne", sans-serif;
+        font-size: 26px;
+        font-weight: 700;
+        color: var(--gold);
+      }
+
+      .stat-label {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.35);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      /* ── right panel ── */
+      .right {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px;
+        position: relative;
+      }
+
+      .form-box {
+        width: 100%;
+        max-width: 400px;
+      }
+
+      .form-title {
+        font-family: "Syne", sans-serif;
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+        margin-bottom: 6px;
+      }
+
+      .form-sub {
+        font-size: 13px;
+        color: var(--muted);
+        margin-bottom: 40px;
+      }
+
+      .form-group {
+        margin-bottom: 22px;
+      }
+
+      label {
+        display: block;
+        font-size: 11px;
+        font-weight: 500;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+
+      input {
+        width: 100%;
+        padding: 13px 16px;
+        border: 1.5px solid var(--border);
+        background: #fff;
+        font-family: "DM Sans", sans-serif;
+        font-size: 14px;
+        color: var(--ink);
+        outline: none;
+        transition: border-color 0.2s;
+        border-radius: 2px;
+      }
+
+      input:focus {
+        border-color: var(--ink);
+      }
+      input::placeholder {
+        color: #bbb;
+      }
+
+      .btn-login {
+        width: 100%;
+        padding: 14px;
+        background: var(--ink);
+        color: #fff;
+        border: none;
+        font-family: "Syne", sans-serif;
+        font-size: 14px;
+        font-weight: 600;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        cursor: pointer;
+        margin-top: 8px;
+        border-radius: 2px;
+        transition: background 0.2s, transform 0.1s;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .btn-login:hover {
+        background: #1e2230;
+      }
+      .btn-login:active {
+        transform: scale(0.99);
+      }
+
+      .btn-login.loading::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          90deg,
+          transparent 0%,
+          rgba(255, 255, 255, 0.1) 50%,
+          transparent 100%
+        );
+        animation: shimmer 1s infinite;
+      }
+
+      @keyframes shimmer {
+        0% {
+          transform: translateX(-100%);
+        }
+        100% {
+          transform: translateX(100%);
+        }
+      }
+
+      .error-msg {
+        background: #fdf0ef;
+        border: 1px solid #f5c6c2;
+        color: var(--red);
+        font-size: 13px;
+        padding: 11px 14px;
+        margin-bottom: 20px;
+        border-radius: 2px;
+        display: none;
+      }
+
+      .error-msg.show {
+        display: block;
+      }
+
+      .republic-seal {
+        position: absolute;
+        bottom: 32px;
+        right: 40px;
+        font-size: 11px;
+        color: var(--muted);
+        text-align: right;
+        line-height: 1.6;
+      }
+
+      .republic-seal strong {
+        font-family: "Syne", sans-serif;
+        font-size: 10px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <div class="left">
+        <div class="brand">
+          <div class="brand-mark">
+            <img src="fiscalis.png" alt="" />
+          </div>
+          <div class="brand-name">Fiscalis</div>
+        </div>
+
+        <div class="left-main">
+          <div class="left-headline">
+            Gestion des<br />Services <em>Publics</em><br />en Ligne
+          </div>
+          <p class="left-desc">
+            Tableau de bord administratif pour la gestion des demandes de
+            documents officiels et le suivi des paiements Lightning.
+          </p>
+        </div>
+
+        <div class="left-stats">
+          <div class="stat-item">
+            <div class="stat-num" id="stat-total">—</div>
+            <div class="stat-label">Demandes totales</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-num" id="stat-paid">—</div>
+            <div class="stat-label">Payées aujourd'hui</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-num" id="stat-sats">—</div>
+            <div class="stat-label">Sats collectés</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="right">
+        <div class="form-box">
+          <div class="form-title">Connexion</div>
+          <div class="form-sub">Espace réservé aux agents gouvernementaux</div>
+
+          <div class="error-msg" id="errorMsg"></div>
+
+          <form id="loginForm">
+            <div class="form-group">
+              <label>Adresse e-mail</label>
+              <input
+                type="email"
+                id="email"
+                placeholder="agent@gouvernement.bi"
+                required
+                autocomplete="email"
+              />
+            </div>
+            <div class="form-group">
+              <label>Mot de passe</label>
+              <input
+                type="password"
+                id="password"
+                placeholder="••••••••••"
+                required
+                autocomplete="current-password"
+              />
+            </div>
+            <button type="submit" class="btn-login" id="loginBtn">
+              Se connecter
+            </button>
+          </form>
+        </div>
+
+        <div class="republic-seal">
+          <strong>République du Burundi</strong>
+          Ministère de l'Intérieur
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const API = "http://localhost:8000/api";
+
+      // Load public stats for the left panel
+      async function loadStats() {
+        try {
+          const token = localStorage.getItem("fiscalis_token");
+          if (!token) return;
+          const r = await fetch(`${API}/admin/stats`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (!r.ok) return;
+          const { data } = await r.json();
+          document.getElementById("stat-total").textContent =
+            data.applications.total.toLocaleString();
+          document.getElementById("stat-paid").textContent =
+            data.applications.paid.toLocaleString();
+          const sats = data.revenue.total_sats_collected;
+          document.getElementById("stat-sats").textContent =
+            sats > 999999
+              ? (sats / 1000000).toFixed(1) + "M"
+              : sats > 999
+              ? (sats / 1000).toFixed(0) + "K"
+              : sats;
+        } catch {}
+      }
+
+      // Redirect if already logged in
+      if (localStorage.getItem("fiscalis_token")) {
+        window.location.href = "dashboard.html";
+      }
+
+      loadStats();
+
+      document
+        .getElementById("loginForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const btn = document.getElementById("loginBtn");
+          const err = document.getElementById("errorMsg");
+          err.classList.remove("show");
+          btn.textContent = "Connexion en cours...";
+          btn.classList.add("loading");
+          btn.disabled = true;
+
+          try {
+            const res = await fetch(`${API}/auth/officer/login`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                email: document.getElementById("email").value.trim(),
+                password: document.getElementById("password").value,
+              }),
+            });
+            const json = await res.json();
+            if (!json.success)
+              throw new Error(json.message || "Échec de connexion");
+            localStorage.setItem("fiscalis_token", json.data.token);
+            localStorage.setItem(
+              "fiscalis_officer",
+              JSON.stringify(json.data.officer)
+            );
+            window.location.href = "dashboard.html";
+          } catch (ex) {
+            err.textContent = ex.message;
+            err.classList.add("show");
+            btn.textContent = "Se connecter";
+            btn.classList.remove("loading");
+            btn.disabled = false;
+          }
+        });
+    </script>
+  </body>
+</html>
