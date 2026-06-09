@@ -2,8 +2,6 @@
 
 **Government Document Payment Platform — Node.js + MySQL + Bitcoin Lightning**
 
----
-
 ## Overview
 
 Fiscalis is a backend API that lets citizens pay for government documents (passports,
@@ -58,17 +56,14 @@ Fiscalis-backend/
 ### 1. Clone & install
 
 ```bash
-git clone <repo>
-cd Fiscalis-backend
+git clone https://github.com/MuhireMax/fiscalis-project.git
+cd Fiscalis-server
 npm install
 ```
 
 ### 2. Configure environment
 
-```bash
-cp .env.example .env
 # Edit .env — set your MySQL credentials and Blink API key
-```
 
 ### 3. Create database & run migrations
 
@@ -479,3 +474,9 @@ PUT /admin/services/LAND_TITLE
 - [ ] Set up process manager (PM2 or systemd)
 - [ ] Enable MySQL backups
 - [ ] Monitor with logs (consider Winston + log rotation)
+
+## ─────────────────────────────────────────────
+
+The Mobile APP repo is here: https://github.com/yvartpro/biingo.git
+
+## ─────────────────────────────────────────────
