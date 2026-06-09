@@ -45,7 +45,7 @@ async function generateQuittancePDF(applicationId) {
     doc.on("end", () => resolve(Buffer.concat(chunks)));
     doc.on("error", reject);
 
-    // ── A4 constants ──────────────────────────────────────
+    // ── A4 constants ─────────────────────────────────────
     const PW = 595; // page width
     const PH = 842; // page height
     const ML = 40; // margin left
@@ -78,9 +78,8 @@ async function generateQuittancePDF(applicationId) {
       doc.restore();
     }
 
-    // ════════════════════════════════════════════════════════
     //  HEADER  (y: 0 → 88)
-    // ════════════════════════════════════════════════════════
+
     // Gold top stripe
     doc.rect(0, 0, PW, 5).fill(C.gold);
 
@@ -132,9 +131,8 @@ async function generateQuittancePDF(applicationId) {
       .strokeColor(C.gold)
       .stroke();
 
-    // ════════════════════════════════════════════════════════
     //  RECEIPT INFO BAR  (y: 128 → 158)
-    // ════════════════════════════════════════════════════════
+
     doc.rect(ML, 128, W, 34).fill("#EEF2FF").stroke(C.secondary).lineWidth(0.5);
 
     doc
@@ -159,11 +157,10 @@ async function generateQuittancePDF(applicationId) {
       .fillColor("#000000")
       .text(paidDateStr, ML + 270, 143);
 
-    // ════════════════════════════════════════════════════════
     //  LAYOUT: two columns below y=168
     //  Left col:  x=ML       w=240
     //  Right col: x=ML+258   w=215
-    // ════════════════════════════════════════════════════════
+
     let yL = 170; // left column cursor
     let yR = 170; // right column cursor
 
@@ -208,9 +205,8 @@ async function generateQuittancePDF(applicationId) {
       return y + 6;
     }
 
-    // ════════════════════════════════════════════════════════
     //  LEFT COLUMN: Citizen + Service
-    // ════════════════════════════════════════════════════════
+
     yL = secTitle("INFORMATIONS DU DEMANDEUR", colL, wL, yL);
     yL = field("Nom complet", row.citizen_name, colL, wL, yL);
     yL = field("Téléphone", row.phone, colL, wL, yL);
@@ -221,9 +217,8 @@ async function generateQuittancePDF(applicationId) {
     yL = field("Type de document", row.service_name, colL, wL, yL);
     yL = field("Catégorie", row.category, colL, wL, yL);
 
-    // ════════════════════════════════════════════════════════
     //  RIGHT COLUMN: Dynamic form fields
-    // ════════════════════════════════════════════════════════
+
     if (formEntries.length > 0) {
       yR = secTitle("INFORMATIONS SPÉCIFIQUES", colR, wR, yR);
       for (const [key, value] of formEntries) {
@@ -244,10 +239,9 @@ async function generateQuittancePDF(applicationId) {
       .strokeColor(C.border)
       .stroke();
 
-    // ════════════════════════════════════════════════════════
     //  PAYMENT BOX  — sits below both columns
     //  Target y ≈ colBottomY + 10, but capped so footer fits
-    // ════════════════════════════════════════════════════════
+
     const payY = Math.min(colBottomY + 12, PH - 215);
     const payH = 72;
 
@@ -299,9 +293,8 @@ async function generateQuittancePDF(applicationId) {
       .text("PAYÉ", PW - ML - 133, payY + 26, { width: 114, align: "center" });
     doc.restore();
 
-    // ════════════════════════════════════════════════════════
     //  NOTICE BOX
-    // ════════════════════════════════════════════════════════
+
     const noticeY = payY + payH + 8;
     const noticeH = 44;
     doc
@@ -326,9 +319,8 @@ async function generateQuittancePDF(applicationId) {
         { width: W - 20 }
       );
 
-    // ════════════════════════════════════════════════════════
     //  SIGNATURE LINE
-    // ════════════════════════════════════════════════════════
+
     const sigY = noticeY + noticeH + 12;
     doc
       .moveTo(PW - ML - 200, sigY)
@@ -347,9 +339,8 @@ async function generateQuittancePDF(applicationId) {
         { width: 200, align: "center" }
       );
 
-    // ════════════════════════════════════════════════════════
     //  FOOTER  (pinned to bottom)
-    // ════════════════════════════════════════════════════════
+
     const footerY = PH - 52;
     doc.rect(0, footerY - 2, PW, 1).fill(C.primary);
     doc.rect(0, footerY - 1, PW, 1).fill(C.gold);

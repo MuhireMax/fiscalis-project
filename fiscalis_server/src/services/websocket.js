@@ -126,8 +126,7 @@ function setupWebSocketServer(server) {
 }
 
 function notifyPaymentUpdate(citizenId, applicationUuid, status) {
-  // This can be called from other parts of the app
-  // Implementation similar to above
+  // This will be implemented bro
 }
 
 module.exports = { setupWebSocketServer, notifyPaymentUpdate };

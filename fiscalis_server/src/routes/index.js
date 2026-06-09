@@ -31,9 +31,8 @@ const apiLimiter = rateLimit({
 
 router.use(apiLimiter);
 
-// ══════════════════════════════════════════════════════════════
 //  CITIZEN AUTH
-// ══════════════════════════════════════════════════════════════
+
 router.post(
   "/auth/citizen/register",
   authLimiter,
@@ -62,9 +61,8 @@ router.post(
 
 router.get("/auth/citizen/me", requireCitizen, citizenAuth.me);
 
-// ══════════════════════════════════════════════════════════════
 //  OFFICER AUTH
-// ══════════════════════════════════════════════════════════════
+
 router.post(
   "/auth/officer/login",
   authLimiter,
@@ -89,15 +87,13 @@ router.post(
   officerAuth.createOfficer
 );
 
-// ══════════════════════════════════════════════════════════════
 //  PUBLIC: SERVICE CATALOG
-// ══════════════════════════════════════════════════════════════
+
 router.get("/services", servicesCtrl.list);
 router.get("/services/:code", servicesCtrl.getOne);
 
-// ══════════════════════════════════════════════════════════════
 //  CITIZEN: APPLICATIONS
-// ══════════════════════════════════════════════════════════════
+
 router.post(
   "/applications",
   requireCitizen,
@@ -147,9 +143,8 @@ router.get(
   appsCtrl.downloadQuittance
 );
 
-// ══════════════════════════════════════════════════════════════
 //  ADMIN: APPLICATIONS
-// ══════════════════════════════════════════════════════════════
+
 router.get("/admin/stats", requireOfficer, adminCtrl.getStats);
 router.get("/admin/applications", requireOfficer, adminCtrl.listApplications);
 router.get(
@@ -183,9 +178,8 @@ router.post(
   adminCtrl.verifyReceipt
 );
 
-// ══════════════════════════════════════════════════════════════
 //  ADMIN: SERVICE MANAGEMENT
-// ══════════════════════════════════════════════════════════════
+
 router.post(
   "/admin/services",
   requireAdmin,
@@ -214,9 +208,8 @@ router.put(
   servicesCtrl.update
 );
 
-// ══════════════════════════════════════════════════════════════
 //  HEALTH CHECK
-// ══════════════════════════════════════════════════════════════
+
 router.get("/health", (req, res) =>
   res.json({ success: true, message: "OK", data: { timestamp: new Date() } })
 );

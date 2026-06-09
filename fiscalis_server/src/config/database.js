@@ -17,7 +17,7 @@ const pool = mysql.createPool({
   charset: "utf8mb4",
 });
 
-// Test connection on startup
+// Test connection on start
 async function testConnection() {
   try {
     const conn = await pool.getConnection();

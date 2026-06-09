@@ -6,9 +6,8 @@ const { generateQuittancePDF } = require("../services/quittance");
 const { ok, fail } = require("../utils/response");
 const QRCode = require("qrcode");
 
-// ─────────────────────────────────────────────
 //  POST /api/applications
-// ─────────────────────────────────────────────
+
 // src/controllers/applications.js - Fix the create function
 
 async function create(req, res) {
@@ -201,9 +200,8 @@ async function create(req, res) {
   }
 }
 
-// ─────────────────────────────────────────────
 //  GET /api/applications/:uuid/payment-status
-// ─────────────────────────────────────────────
+
 async function paymentStatus(req, res) {
   try {
     const [[row]] = await pool.query(
@@ -254,9 +252,8 @@ async function paymentStatus(req, res) {
   }
 }
 
-// ─────────────────────────────────────────────
 //  GET /api/applications  (citizen's list)
-// ─────────────────────────────────────────────
+
 async function listMine(req, res) {
   const { page = 1, limit = 20, status } = req.query;
   const offset = (parseInt(page) - 1) * parseInt(limit);
@@ -282,9 +279,8 @@ async function listMine(req, res) {
   return ok(res, { applications });
 }
 
-// ─────────────────────────────────────────────
 //  GET /api/applications/:uuid
-// ─────────────────────────────────────────────
+
 async function getOne(req, res) {
   const [[row]] = await pool.query(
     `SELECT a.uuid, a.receipt_number, a.status, a.citizen_notes, a.submitted_at, a.paid_at,
@@ -316,10 +312,9 @@ async function getOne(req, res) {
   return ok(res, { application: row });
 }
 
-// ─────────────────────────────────────────────
 //  GET /api/applications/:uuid/payment-info
 //  Returns payment details without full application data
-// ─────────────────────────────────────────────
+
 async function getPaymentInfo(req, res) {
   try {
     const [[row]] = await pool.query(
@@ -388,9 +383,9 @@ async function getPaymentInfo(req, res) {
     return fail(res, "Failed to fetch payment info", 500);
   }
 }
-// ─────────────────────────────────────────────
+
 //  GET /api/applications/:uuid/quittance  (PDF download)
-// ─────────────────────────────────────────────
+
 async function downloadQuittance(req, res) {
   const [[app]] = await pool.query(
     // "SELECT id, receipt_number, status FROM applications WHERE uuid = ? AND citizen_id = ?",

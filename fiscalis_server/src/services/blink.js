@@ -8,7 +8,7 @@ const BLINK_WS = "wss://ws.blink.sv/graphql";
 
 // Use your actual wallet ID from the test
 const WALLET_ID =
-  process.env.BLINK_WALLET_ID || "bce366d5-2d4c-4652-9dc4-9e238b8f78bf";
+  process.env.BLINK_WALLET_ID || "walletID_from_blink_dashboard";
 
 // Internal GraphQL helper
 async function blinkQuery(query, variables = {}) {
@@ -28,9 +28,6 @@ async function blinkQuery(query, variables = {}) {
 }
 
 // Create BTC Invoice directly with wallet ID
-// Add this to your createBTCInvoice function right before the API call
-// src/services/blink.js - Fix the createBTCInvoice function
-
 async function createBTCInvoice(amountSats, memo, expiresInMinutes = 15) {
   console.log(`[Blink] createBTCInvoice called with:`);
   console.log(`  amountSats: ${amountSats} (${typeof amountSats})`);

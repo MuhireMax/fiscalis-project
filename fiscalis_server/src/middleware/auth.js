@@ -14,14 +14,15 @@ function signRefreshToken(payload) {
   });
 }
 
-// ─── Middleware: require citizen JWT ──────────────────────────
+// ─── Middleware: require citizen JWT ──
 function requireCitizen(req, res, next) {
   const token = extractToken(req);
   if (!token) return res.status(401).json({ error: "Authentication required" });
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    if (decoded.type !== "citizen") return res.status(403).json({ error: "Access denied" });
+    if (decoded.type !== "citizen")
+      return res.status(403).json({ error: "Access denied" });
     req.citizen = decoded;
     next();
   } catch {
@@ -36,7 +37,8 @@ function requireOfficer(req, res, next) {
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    if (decoded.type !== "officer") return res.status(403).json({ error: "Officers only" });
+    if (decoded.type !== "officer")
+      return res.status(403).json({ error: "Officers only" });
     req.officer = decoded;
     next();
   } catch {
@@ -60,4 +62,10 @@ function extractToken(req) {
   return null;
 }
 
-module.exports = { signToken, signRefreshToken, requireCitizen, requireOfficer, requireAdmin };
+module.exports = {
+  signToken,
+  signRefreshToken,
+  requireCitizen,
+  requireOfficer,
+  requireAdmin,
+};

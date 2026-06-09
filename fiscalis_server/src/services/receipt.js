@@ -4,9 +4,8 @@ const { pool } = require("../config/database");
 
 const PREFIX = process.env.RECEIPT_PREFIX || "GVP";
 
-// ─────────────────────────────────────────────
 //  Generate sequential receipt number: GVP-2024-000001
-// ─────────────────────────────────────────────
+
 async function generateReceiptNumber() {
   const year = new Date().getFullYear();
   const prefix = `${PREFIX}-${year}-`;
@@ -26,9 +25,8 @@ async function generateReceiptNumber() {
   return `${prefix}${String(seq).padStart(6, "0")}`;
 }
 
-// ─────────────────────────────────────────────
 //  QR code — encodes the receipt number for officer scanning
-// ─────────────────────────────────────────────
+
 async function generateReceiptQR(receiptNumber) {
   return await QRCode.toDataURL(receiptNumber, {
     errorCorrectionLevel: "H",
@@ -37,9 +35,8 @@ async function generateReceiptQR(receiptNumber) {
   });
 }
 
-// ─────────────────────────────────────────────
 //  Build the full receipt object for API response
-// ─────────────────────────────────────────────
+
 async function buildReceipt(applicationId) {
   const [[row]] = await pool.query(
     `SELECT
@@ -67,23 +64,23 @@ async function buildReceipt(applicationId) {
     applicationUuid: row.uuid,
     status: row.status,
     citizen: {
-      name:       row.citizen_name,
-      email:      row.citizen_email,
+      name: row.citizen_name,
+      email: row.citizen_email,
       nationalId: row.national_id,
     },
     service: {
-      name:     row.service_name,
-      code:     row.service_code,
+      name: row.service_name,
+      code: row.service_code,
       category: row.category,
     },
     payment: {
-      amountSats:   row.amount_sats,
-      status:       row.payment_status,
-      paidAt:       row.invoice_paid_at,
+      amountSats: row.amount_sats,
+      status: row.payment_status,
+      paidAt: row.invoice_paid_at,
     },
     submittedAt: row.submitted_at,
-    paidAt:      row.paid_at,
-    qrCode,          // base64 data URL
+    paidAt: row.paid_at,
+    qrCode, // base64 data URL
   };
 }
 
