@@ -1,4 +1,4 @@
-/* shared.js — auth guard + layout helpers */
+/* shared.js*/
 const API = "http://localhost:8000/api";
 
 function getToken() {
@@ -278,7 +278,7 @@ tbody tr:hover td{background:#fafbfc;cursor:pointer}
 .modal-body{padding:22px}
 .modal-footer{padding:14px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;background:#fafbfc}
 
-/* Detail rows */
+/* Detail rows styles */
 .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:0}
 .detail-row{padding:10px 0;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:3px}
 .detail-row:last-child{border-bottom:none}
